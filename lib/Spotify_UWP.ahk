@@ -4,132 +4,177 @@
  */
 
 UIA.AutoSetFocus := False
-
+Spotify_UWP.winExe := "ahk_exe " . General.CurrentPlayerExe
 class Spotify_UWP {
-    static winExe := "ahk_exe Spotify.exe"
+;    static winExe := "ahk_exe " General.CurrentPlayerExe
+;    static winExe := "ahk_exe Spotify.exe"
     static winTitle => WinGetTitle(this.winExe)
     static exePath := A_AppData "\Spotify\Spotify.exe"
 
     ; --- Cache Store ---
     static _cache := Map(
-        "Doc", "",
-        "NPBar", "",
-        "Controls", ""
+        "Doc", false,
+        "NPBar", false,
+        "Controls", false
     )
 
     static GetDocumentElement(forceRefresh := false, caller := "", parameter := "") {
         if (forceRefresh || !this._cache["Doc"]) {
-            if (!parameter)
-                this._DisplayOsd("connecting...")
-            targetWindow := "ahk_class Chrome_WidgetWin_1 ahk_exe " this.winExe
-            oldSetting := DetectHiddenWindows(true)
-            try {
-                this._cache["Doc"] := UIA.ElementFromHandle(hwnd).FindElement({ AutomationId: "RootWebArea" })
-            } catch {
-                DetectHiddenWindows(oldSetting)
+            ;this.OpenSpotify()
+            this._cache["Doc"] := false
+            ;this._DisplayOsd("connecting...")
+            OSD_General( imageConnect, "connecting")
+
+            if !(General.CurrentPlayerExe == "spotify.exe"){
                 this.OpenSpotify()
-                DetectHiddenWindows(true)
-                try {
-                    if (hwnd := WinExist(targetWindow)) {
-                        this._cache["Doc"] := UIA.ElementFromHandle(hwnd, , 5000).FindElement({ AutomationId: "RootWebArea" })
-                    }
-                } catch {
-                    DetectHiddenWindows(oldSetting)
-                    ReloadWithArgs(caller, parameter)
-                    Exit()
+                sleep(5000)
+            }
+                targetHwnd := this._GetCorrectHwnd()
+
+            
+
+            ;DebugFunc()
+            try this._cache["Doc"] := UIA.ElementFromHandle(targetHwnd).FindElement({ AutomationId: "RootWebArea" })
+
+
+;            if (this._cache["Doc"] != false){
+;                try return this._cache["Doc"]
+;            }
+            if (this._cache["Doc"]){
+                return this._cache["Doc"]
+            }
+
+            if (General.CurrentPlayerExe == "spotify.exe"){
+                this.OpenSpotify()
+            }
+
+;            this.OpenSpotify()
+            targetHwnd := this._GetCorrectHwnd()
+
+            try{
+                timeout := A_TickCount + 5000
+                while (A_TickCount < timeout && !(this._cache["Doc"] := UIA.ElementFromHandle(targetHwnd).FindElement({ AutomationId: "RootWebArea" }))){
+                    Sleep -1
                 }
             }
-            DetectHiddenWindows(oldSetting)
+
+            ;if (this._cache["Doc"] != false){
+            if (this._cache["Doc"]){
+                return this._cache["Doc"]
+            }
+
+            ReloadWithArgs(caller, parameter)
+            Exit()
         }
         return this._cache["Doc"]
     }
 
     static GetNowPlayingBar(forceRefresh := false, caller := "", parameter := "") {
         if (forceRefresh || !this._cache["NPBar"]) {
-            try {
-                doc := this.GetDocumentElement(forceRefresh, caller, parameter)
-                this._cache["NPBar"] := doc.FindElement({ Type: "Group", Name: LanguagePack[General.CurrentLang]["Now playing bar"] })
-            } catch {
-                MsgBoxCustom(
-                    "'Now playing bar' not found.`n`n"
-                    "1 - Open Spotify App and set language`n"
-                    "2 - Click " App.Name " tray icon and set language`n`n`n"
-                    "Current " App.Name " Language selected: "
-                    General.CurrentLang "."
-                , App.Name)
+            this._cache["NPBar"] := false
+            doc := this.GetDocumentElement(forceRefresh, caller, parameter)
+            this._cache["NPBar"] := doc.FindElement({ Type: "Group", Name: LanguagePack[General.CurrentLang]["Now playing bar"]})
 
-                Exit()
-                this._cache["NPBar"] := ""
+            ;if (this._cache["NPBar"] != false){
+            if (this._cache["NPBar"]){
+                return this._cache["NPBar"]
             }
+
+            MsgBoxCustom(
+                "'Now playing bar' not found.`n`n"
+                "1 - Open Spotify App and set language`n"
+                "2 - Click " App.Name " tray icon and set language`n`n`n"
+                "Current " App.Name " Language selected: "
+                General.CurrentLang "."
+            , App.Name)
+
+            Exit()
+;                this._cache["NPBar"] := ""
         }
         return this._cache["NPBar"]
     }
 
     static GetPlayerControls(forceRefresh := false, caller := "", parameter := "") {
         if (forceRefresh || !this._cache["Controls"]) {
-            try {
-                npBar := this.GetNowPlayingBar(forceRefresh, caller, parameter)
-                this._cache["Controls"] := npBar.FindElement({ Type: "Group", Name: LanguagePack[General.CurrentLang]["Player controls"] })
-            } catch {
-                MsgBoxCustom(
-                    "'Player controls' not found.`n`n"
-                    "1 - Open Spotify App and set language`n"
-                    "2 - Click " App.Name " tray icon and set language`n`n`n"
-                    "Current " App.Name " Language selected: "
-                    General.CurrentLang "."
-                , App.Name)
+            this._cache["Controls"] := false
+            npBar := this.GetNowPlayingBar(forceRefresh, caller, parameter)
+            this._cache["Controls"] := npBar.FindElement({ Type: "Group", Name: LanguagePack[General.CurrentLang]["Player controls"]})
 
-                Exit()
-                this._cache["Controls"] := ""
+            ;if (this._cache["Controls"] != false){
+            if (this._cache["Controls"]){
+                return this._cache["Controls"]
             }
+
+            MsgBoxCustom(
+                "'Player controls' not found.`n`n"
+                "1 - Open Spotify App and set language`n"
+                "2 - Click " App.Name " tray icon and set language`n`n`n"
+                "Current " App.Name " Language selected: "
+                General.CurrentLang "."
+            , App.Name)
+
+            Exit()
+;            this._cache["Controls"] := ""
         }
         return this._cache["Controls"]
     }
 
     static ClearCache() {
         for key, value in this._cache
-            this._cache[key] := ""
+            this._cache[key] := false
     }
 
+    static btnPlayPause := false
     ; --- Play / Pause ---
     static TogglePlay() {
-        loop 2 {
+        loop 5 {
             try {
-                btn := this.GetPlayerControls(A_Index == 2, "TogglePlay").FindElement([{ Name: LanguagePack[General.CurrentLang]["Play"], Type: "Button" }, { Name: LanguagePack[General.CurrentLang]["Pause"], Type: "Button" }
-                ])
-                btn.Invoke()
+                this.btnPlayPause.Invoke()
                 break
             } catch {
-                if (A_Index == 2) {
-                    try {
-                        btn := this.GetDocumentElement(true, "TogglePlay").FindElement([{ Name: LanguagePack[General.CurrentLang]["Play"], Type: "Button" }, { Name: LanguagePack[General.CurrentLang]["Pause"], Type: "Button" }
-                        ])
-                        btn.Invoke()
-                    } catch {
-                        return
+                try {
+                    this.btnPlayPause := this.GetPlayerControls(A_Index == 2, "TogglePlay").FindElement([{ Name: LanguagePack[General.CurrentLang]["Play"], Type: "Button" }, { Name: LanguagePack[General.CurrentLang]["Pause"], Type: "Button" }])
+                } catch {
+                    if (A_Index >= 4){
+                    try this.btnPlayPause := this.GetDocumentElement(A_Index == 4, "TogglePlay").FindElement([{ Name: LanguagePack[General.CurrentLang]["Play"], Type: "Button" }, { Name: LanguagePack[General.CurrentLang]["Pause"], Type: "Button" }])
                     }
                 }
             }
+            if (A_Index == 2 || A_Index == 4)
+                sleep(1000)
         }
-        state := this._CheckTitle() ? LanguagePack[General.CurrentLang]["Play"] : LanguagePack[General.CurrentLang]["Pause"]
-        this._DisplayOsd(state)
+
+        ;state := this._CheckPlayingStateAHKTitle() ? LanguagePack[General.CurrentLang]["Play"] : LanguagePack[General.CurrentLang]["Pause"]
+        state := this._CheckPlayingStateAHKTitle() ? imagePlay : imagePause
+        label := (state == imagePlay ) ? LanguagePack[General.CurrentLang]["Play"] : LanguagePack[General.CurrentLang]["Pause"]
+        ;        state := this._CheckPlayingStateUIATitle() ? LanguagePack[General.CurrentLang]["Play"] : LanguagePack[General.CurrentLang]["Pause"]
+
+        ;this._DisplayOsd(state)
+        OSD_General( state, label)
     }
 
-    static ToggleLike() {
-        loop 2 {
+    static btnAddToList := false
+    ; --- Add to Lib ---
+    static AddToList() {
+        OSD_General( imageAdd, LanguagePack[General.CurrentLang]["Save to Your Library"])
+        loop 5 {
             try {
-                npBar := this.GetNowPlayingBar(A_Index == 2)
-                el := npBar.FindElement([{ Name: LanguagePack[General.CurrentLang]["Save to Your Library"] }, { Name: LanguagePack[General.CurrentLang]["Add to Your Episodes"] }
-                ])
-                el.Click()
-                return
+                this.btnAddToList.Click()
+                break
             } catch {
-                if (A_Index == 2) {
-                    try this.GetDocumentElement(true).FindElement([{ Name: LanguagePack[General.CurrentLang]["Save to Your Library"] }, { Name: LanguagePack[General.CurrentLang]["Add to Your Episodes"] }
-                    ]).Click()
+                try {
+                    this.btnAddToList := this.GetNowPlayingBar(A_Index == 2, "AddToList").FindElement([{ Name: LanguagePack[General.CurrentLang]["Save to Your Library"], Type: "Button" }, { Name: LanguagePack[General.CurrentLang]["Add to Your Episodes"], Type: "Button" }])
+                } catch {
+                    if (A_Index >= 4){
+                    try this.btnAddToList := this.GetDocumentElement(A_Index == 4, "AddToList").FindElement([{ Name: LanguagePack[General.CurrentLang]["Save to Your Library"], Type: "Button"  }, { Name: LanguagePack[General.CurrentLang]["Add to Your Episodes"], Type: "Button"  }])
+                    }
                 }
             }
+            if (A_Index == 2 || A_Index == 4)
+                sleep(1000)
         }
+        ;this._DisplayOsd("✚")
+        
     }
 
     static NowPlaying {
@@ -161,81 +206,231 @@ class Spotify_UWP {
         }
     }
 
+    static btnNext := false
+    ; --- Next ---
     static NextSong() {
-        loop 2 {
+        OSD_General( imageNext, LanguagePack[General.CurrentLang]["Next"])
+        loop 5 {
             try {
-                this.GetPlayerControls(A_Index == 2, "NextSong").FindElement({ Name: LanguagePack[General.CurrentLang]["Next"], Type: "Button" }).Invoke()
-                return
-            } catch {
-                if (A_Index == 2) {
-                    try this.GetDocumentElement(true, "NextSong").FindElement({ Name: LanguagePack[General.CurrentLang]["Next"], Type: "Button" }).Invoke()
-                }
-            }
-        }
-        this._DisplayOsd(LanguagePack[General.CurrentLang]["Next"])
-    }
-
-    static PreviousSong() {
-        loop 2 {
-            try {
-                this.GetPlayerControls(A_Index == 2, "NextSong").FindElement({ Name: LanguagePack[General.CurrentLang]["Previous"], Type: "Button" }).Invoke()
-                return
-            } catch {
-                if (A_Index == 2) {
-                    try this.GetDocumentElement(true, "NextSong").FindElement({ Name: LanguagePack[General.CurrentLang]["Previous"], Type: "Button" }).Invoke()
-                }
-            }
-        }
-        this._DisplayOsd(LanguagePack[General.CurrentLang]["Previous"])
-    }
-
-    static ToggleFullscreen() {
-        this.OpenSpotify()
-
-        loop 2 {
-            try {
-                this.GetNowPlayingBar(A_Index == 2, "ToggleFullscreen").FindElement([{ Name: LanguagePack[General.CurrentLang]["Enter Full screen"], Type: "Button" }, { Name: LanguagePack[General.CurrentLang]["Exit full screen"], Type: "Button" }
-                ]).Toggle()
-                this._DisplayOsd("Full screen")
-                return
-            } catch {
-                if (A_Index == 2) {
-                    try this.GetDocumentElement(true, "ToggleFullscreen").FindElement([{ Name: LanguagePack[General.CurrentLang]["Enter Full screen"], Type: "Button" }, { Name: LanguagePack[General.CurrentLang]["Exit full screen"], Type: "Button" }
-                    ]).Toggle()
-                    this._DisplayOsd("Full screen")
-                }
-            }
-        }
-    }
-
-    static ToggleMute() {
-        isMutedState := false
-        btn := ""
-
-        loop 2 {
-            try {
-                btn := this.GetNowPlayingBar(A_Index == 2, "ToggleMute").FindElement([{ Name: LanguagePack[General.CurrentLang]["Mute"], Type: "Button" }, { Name: LanguagePack[General.CurrentLang]["Unmute"], Type: "Button" }
-                ])
-                ;                isMutedState := (btn.Name == LanguagePack[General.CurrentLang]["Mute"])
-                btn.Invoke()
+                this.btnNext.Invoke()
                 break
             } catch {
-                if (A_Index == 2) {
-                    try {
-                        btn := this.GetDocumentElement(true, "ToggleMute").FindElement([{ Name: LanguagePack[General.CurrentLang]["Mute"], Type: "Button" }, { Name: LanguagePack[General.CurrentLang]["Unmute"], Type: "Button" }
-                        ])
-                        ;                        isMutedState := (btn.Name == LanguagePack[General.CurrentLang]["Mute"])
-                        btn.Invoke()
-                    } catch {
-                        return
+                try {
+                    this.btnNext := this.GetPlayerControls(A_Index == 2, "NextSong").FindElement({ Name: LanguagePack[General.CurrentLang]["Next"], Type: "Button" })
+                } catch {
+                    if (A_Index >= 4){
+                    try this.btnNext := this.GetDocumentElement(A_Index == 4, "NextSong").FindElement({ Name: LanguagePack[General.CurrentLang]["Next"], Type: "Button" })
                     }
                 }
             }
+            if (A_Index == 2 || A_Index == 4)
+                sleep(1000)
         }
-        ;        state := isMutedState ? LanguagePack[General.CurrentLang]["Mute"] : LanguagePack[General.CurrentLang]["Unmute"]
-        state := LanguagePack[General.CurrentLang]["Mute"] . "/" . LanguagePack[General.CurrentLang]["Unmute"]
+;        this._DisplayOsd(LanguagePack[General.CurrentLang]["Next"])
+        ;this._DisplayOsd("▶|")
+        
+    }
 
-        this._DisplayOsd(state)
+
+    static btnPrevious := false
+    ; --- Next ---
+    static PreviousSong() {
+        OSD_General( imagePrevious, LanguagePack[General.CurrentLang]["Previous"])
+        loop 5 {
+            try {
+                this.btnPrevious.Invoke()
+                sleep(200)
+                this.btnPrevious.Invoke()
+
+                break
+            } catch {
+                try {
+                    this.btnPrevious := this.GetPlayerControls(A_Index == 2, "PreviousSong").FindElement({ Name: LanguagePack[General.CurrentLang]["Previous"], Type: "Button" })
+                } catch {
+                    if (A_Index >= 4){
+                    try this.btnPrevious := this.GetDocumentElement(A_Index == 4, "PreviousSong").FindElement({ Name: LanguagePack[General.CurrentLang]["Previous"], Type: "Button" })
+                    }
+                }
+            }
+            if (A_Index == 2 || A_Index == 4)
+                sleep(1000)
+        }
+;        this._DisplayOsd(LanguagePack[General.CurrentLang]["Previous"])
+        ;this._DisplayOsd("|◀")
+        
+    }
+
+    static btnFullScreen := false
+    ; --- Fullscreen ---
+    static ToggleFullscreen() {
+        OSD_General( imageFullscreen, "Full Screen")
+
+        if (General.CurrentPlayerExe == "spotify.exe"){
+            this.OpenSpotify()
+            targetHwnd := this._GetCorrectHwnd()
+            WinShow("ahk_id " targetHwnd)
+            WinRestore("ahk_id " targetHwnd)
+        }
+
+
+
+
+        loop 5 {
+            try {
+                this.btnFullScreen.Toggle()
+                break
+            } catch {
+                try {
+                    this.btnFullScreen := this.GetNowPlayingBar(A_Index == 2, "ToggleFullscreen").FindElement([{ Name: LanguagePack[General.CurrentLang]["Enter Full screen"], Type: "Button" }, { Name: LanguagePack[General.CurrentLang]["Exit full screen"], Type: "Button" }])
+                } catch {
+                    if (A_Index >= 4){
+                    try this.btnFullScreen := this.GetDocumentElement(A_Index == 4, "ToggleFullscreen").FindElement([{ Name: LanguagePack[General.CurrentLang]["Enter Full screen"], Type: "Button" }, { Name: LanguagePack[General.CurrentLang]["Exit full screen"], Type: "Button" }])
+                    }
+                }
+            }
+            if (A_Index == 2 || A_Index == 4)
+                sleep(1000)
+        }
+        ;this._DisplayOsd("⛶")
+        
+    }
+    
+
+    static btnToggleMute := false
+    ; --- Toggle Mute ---
+    static ToggleMute() {
+        static cachedMutedState := false
+        static isInitialized := false
+
+        strMute := LanguagePack[General.CurrentLang]["Mute"]
+        strUnmute := LanguagePack[General.CurrentLang]["Unmute"]
+        
+        ; 1. Strict Dual-Monitor Visibility Check
+        isSpotifyVisible := false
+        oldDetect := A_DetectHiddenWindows
+        DetectHiddenWindows False 
+        
+        spotifyHwnd := WinExist(this.winExe) ; executable
+        if (spotifyHwnd) {
+            try {
+                style := WinGetStyle(spotifyHwnd)
+                minMax := WinGetMinMax(spotifyHwnd)
+                if (minMax != -1 && (style & 0x10000000)) {
+                    isSpotifyVisible := true
+                }
+            } catch {
+                isSpotifyVisible := false
+            }
+        }
+        
+        isSpotifyActive := WinActive(this.winExe) ; executable
+        
+        ; Default rule: Assume Cache Mode unless proven otherwise by live UI updates
+        isCachedMode := true
+
+        ; Capture the element name BEFORE the click
+        nameBefore := ""
+        if (isSpotifyVisible && this.btnToggleMute) {
+            try {
+                nameBefore := this.btnToggleMute.Name
+            } catch {
+                nameBefore := ""
+            }
+        }
+
+        DetectHiddenWindows True
+
+        ; 2. --- Find and/or Invoke Element ---
+        loop 5 {
+            try {
+                this.btnToggleMute.Invoke()
+                break
+            } catch {
+                try {
+                    this.btnToggleMute := this.GetNowPlayingBar(A_Index == 2, "ToggleMute").FindElement([{ Name: strMute, Type: "Button" }, { Name: strUnmute, Type: "Button" }])
+                } catch {
+                    if (A_Index >= 4) {
+                        try {
+                            this.btnToggleMute := this.GetDocumentElement(A_Index == 4, "ToggleMute").FindElement([{ Name: strMute, Type: "Button" }, { Name: strUnmute, Type: "Button" }])
+                        } catch {
+                            ; Do nothing
+                        }
+                    }
+                }
+            }
+            if (isSpotifyVisible && (A_Index == 2 || A_Index == 4)) {
+                sleep(1000)
+            }
+        }
+        DetectHiddenWindows oldDetect
+
+        ; 3. --- State & Cache Management ---
+        if (isSpotifyVisible) {
+            ; --- SCENARIO A: SPOTIFY IS OPEN ON A MONITOR ---
+            Sleep(150) 
+            
+            nameAfter := ""
+            try {
+                nameAfter := this.btnToggleMute.Name
+            } catch {
+                nameAfter := ""
+            }
+
+            if (nameBefore == "" && nameAfter != "") {
+                cachedMutedState := (nameAfter == strUnmute)
+                ; If it's active or we successfully read a fresh layout tree string on monitor 2
+                isCachedMode := false 
+                isInitialized := true
+            }
+            else if (nameBefore != "" && nameAfter != "" && nameBefore != nameAfter) {
+                ; UI strings changed cleanly and instantly!
+                if (isSpotifyActive) {
+                    ; Case 1: Active Foreground window (Trust UI fully, hide '?')
+                    cachedMutedState := (nameAfter == strUnmute)
+                    isCachedMode := false
+                } else {
+                    ; Case 2: Visible on Monitor 2 but background (Trust state, hide '?')
+                    cachedMutedState := !cachedMutedState
+                    isCachedMode := false 
+                }
+                isInitialized := true
+            } else {
+                ; Case 3: Buried/Covered window or background lag (Force '?' and cache tracking)
+                if (!isInitialized) {
+                    try {
+                        cachedMutedState := (this.btnToggleMute.Name == strUnmute)
+                    } catch {
+                        cachedMutedState := false
+                    }
+                    isInitialized := true
+                }
+                cachedMutedState := !cachedMutedState
+                isCachedMode := true 
+            }
+        } else {
+            ; --- SCENARIO B: SPOTIFY IS MINIMIZED/TRAY ---
+            isCachedMode := true 
+            
+            if (!isInitialized) {
+                try {
+                    cachedMutedState := (this.btnToggleMute.Name == strUnmute)
+                } catch {
+                    cachedMutedState := false
+                }
+                isInitialized := true
+            }
+            
+            cachedMutedState := !cachedMutedState
+        }
+
+        ; 4. --- Process OSD Display ---
+        label := cachedMutedState ? strMute : strUnmute
+        if (isCachedMode) {
+            label .= " (guessing)"
+        }
+
+        iconstate := cachedMutedState ? imageMute : imageUnmute
+        OSD_General(iconstate, label)
     }
 
     ; --- Volume Controls ---
@@ -247,18 +442,18 @@ class Spotify_UWP {
             if (this._currentVol != -1)
                 return this._currentVol
 
-            sliderEl := ""
-            loop 2 {
+            sliderVol := ""
+            loop 5 {
                 try {
-                    sliderEl := this.GetNowPlayingBar(A_Index == 2).FindElement({
+                    sliderVol := this.GetNowPlayingBar(A_Index == 2, "Volume").FindElement({
                         Name: LanguagePack[General.CurrentLang]["Change volume"],
                         Type: "Slider"
                     })
                     break
                 } catch {
-                    if (A_Index == 2) {
+                    if (A_Index >= 4) {
                         try {
-                            sliderEl := this.GetDocumentElement(true).FindElement({
+                            sliderVol := this.GetDocumentElement(A_Index == 4, "Volume").FindElement({
                                 Name: LanguagePack[General.CurrentLang]["Change volume"],
                                 Type: "Slider"
                             })
@@ -267,10 +462,13 @@ class Spotify_UWP {
                         }
                     }
                 }
+                if (A_Index == 2 || A_Index == 4)
+                    sleep(1000)
             }
 
-            this._cachedVolumeSlider := sliderEl
-            this._currentVol := Round(sliderEl.RangeValuePattern.Value * 100)
+            this._cachedVolumeSlider := sliderVol
+            ;this._currentVol := Round(sliderVol.RangeValuePattern.Value * 100)
+            this._currentVol := (sliderVol.RangeValuePattern.Value * 100)
             return this._currentVol
         }
         set {
@@ -278,25 +476,27 @@ class Spotify_UWP {
             if (this._cachedVolumeSlider) {
                 sliderEl := this._cachedVolumeSlider
             } else {
-                loop 2 {
+                loop 5 {
                     try {
-                        sliderEl := this.GetNowPlayingBar(A_Index == 2).FindElement({
+                        sliderVol := this.GetNowPlayingBar(A_Index == 2, "Volume").FindElement({
                             Name: LanguagePack[General.CurrentLang]["Change volume"],
                             Type: "Slider"
                         })
                         break
                     } catch {
-                        if (A_Index == 2) {
+                        if (A_Index >= 4) {
                             try {
-                                sliderEl := this.GetDocumentElement(true).FindElement({
+                                sliderVol := this.GetDocumentElement(A_Index == 4, "Volume").FindElement({
                                     Name: LanguagePack[General.CurrentLang]["Change volume"],
                                     Type: "Slider"
                                 })
                             } catch {
-                                return
+                                return 0
                             }
                         }
                     }
+                    if (A_Index == 2 || A_Index == 4)
+                        sleep(1000)
                 }
                 this._cachedVolumeSlider := sliderEl
             }
@@ -306,7 +506,19 @@ class Spotify_UWP {
                 targetRaw := this._currentVol / 100
                 sliderEl.RangeValuePattern.Value := targetRaw
 
-                this._DisplayOsd(this._currentVol "%")
+                totalSteps := 10
+                dotPosition := Round((this._currentVol / 100) * totalSteps)
+                leftBar := ""
+                loop dotPosition
+                    leftBar .= "─"
+                rightBar := ""
+                loop (totalSteps - dotPosition)
+                    rightBar .= "─"
+                ;this._DisplayOsd(Round(this._currentVol) . " %`n" . leftBar . "●" . rightBar)
+                ;this._DisplayOsd(leftBar . "⦁━─●━─⬤━─⦿━─◉━─⚪️" . rightBar)
+                ;this._DisplayOsd(leftBar . "●" . rightBar)
+                OSD_Volume(Round(this._currentVol), LanguagePack[General.CurrentLang]["Change volume"])
+
 
             } catch {
                 this._cachedVolumeSlider := ""
@@ -315,56 +527,83 @@ class Spotify_UWP {
         }
     }
 
-    static _CheckTitle(string := "Spotify") {
-        oldSetting := DetectHiddenWindows(true)
-        targetWindow := "ahk_class Chrome_WidgetWin_1 ahk_exe " this.winExe
-
-        if WinExist(targetWindow) {
-            title := WinGetTitle(targetWindow)
-            DetectHiddenWindows(oldSetting)
+    static _CheckPlayingStateAHKTitle(string := "Spotify") {
+        targetHwnd := this._GetCorrectHwnd()
+        if WinExist(targetHwnd) {
+            title := WinGetTitle(targetHwnd)
             return !!InStr(title, string)
         }
-        DetectHiddenWindows(oldSetting)
         return false
     }
 
-    static _CheckPlayingState() {
+    static _CheckPlayingStateUIATitle(string := "Spotify") {
+        targetHwnd := this._GetCorrectHwnd()
         try {
-            element := UIA.ElementFromHandle(this.winExe).FindElement({ Type: "Pane", ClassName: "RootView" }, 3)
-            return !!InStr(element.Name, "Spotify")
+            element := UIA.ElementFromHandle(targetHwnd).FindElement({ Type: "Pane", ClassName: "RootView" }, 3)
+            return !!InStr(element.Name, string)
         } catch {
-            return -1
-        }
-    }
-
-    static _DisplayOsd(message) {
-        if (OSDSettings.UseOSD) {
-            if OSD.IsVisible
-                OSD.UpdateText("Spotify " message)
-            else
-                OSD.Show("Spotify " message)
+            return false
         }
     }
 
     static Toast(message) {
         TrayTip
         TrayTip(message, "Spotify info", "Mute " 16)
+        ;TrayTip(message, "Spotify info", "Mute " 36)
     }
 
     static OpenSpotify() {
-        targetWindow := "ahk_class Chrome_WidgetWin_1 ahk_exe " this.winExe
+        ;DebugFunc()
         oldSetting := DetectHiddenWindows(false)
-        if !WinExist(targetWindow) {
-            try {
-                Run("spotify")
-                if WinWait(targetWindow, , 1) {
-                    WinActivate(targetWindow)
-                    WinWaitActive(targetWindow, , 2)
+        oldMatchMode := SetTitleMatchMode("RegEx")
+        ;targetWindow := "ahk_class ^Chrome_WidgetWin_[01]$ ahk_exe " this.winExe
+        targetWindow := "ahk_class ^Chrome_WidgetWin_[01]$ " . this.winExe
+        
+        try {
+                if (General.CurrentPlayerExe == "spotify.exe") {
+                    Run("spotify")
+                } else {
+                    ; FIX 2: Wrapped the URL securely in double quotes using the dot concatenation style
+                    ;Run(General.CurrentPlayerExe . ' "' . "https://spotify.com" . '"')
+                    Run(General.CurrentPlayerExe . ' --new-window "https://spotify.com"')
                 }
-            } catch {
-                MsgBoxCustom("Could not start Spotify.", App.Name)
+
+            ;if WinWait(targetWindow, , 1) {
+            if WinWait(targetWindow, , 1) {
+                targetHwnd := this._GetCorrectHwnd()
+                WinShow("ahk_id " targetHwnd)
+                WinRestore("ahk_id " targetHwnd)
+                WinActivate("ahk_id " targetHwnd)
+                WinWaitActive("ahk_id " targetHwnd, , 2)
+            }
+        } catch {
+            MsgBoxCustom("Could not start Spotify.", App.Name)
+        }
+        
+        DetectHiddenWindows(oldSetting)
+        SetTitleMatchMode(oldMatchMode)
+    }
+
+    static _GetCorrectHwnd() {
+        oldSetting := DetectHiddenWindows(false)
+        oldMatchMode := SetTitleMatchMode("RegEx")
+        ;targetWindow := "ahk_class ^Chrome_WidgetWin_[01]$ ahk_exe " this.winExe
+        targetWindow := "ahk_class ^Chrome_WidgetWin_[01]$ " this.winExe
+        
+        hwndList := WinGetList(targetWindow)
+        correctHwnd := 0
+        
+        for hwnd in hwndList {
+            title := WinGetTitle("ahk_id " hwnd)
+            if (title != "") {
+                correctHwnd := hwnd
+                break
             }
         }
+        
         DetectHiddenWindows(oldSetting)
+        SetTitleMatchMode(oldMatchMode)
+        ;return correctHwnd ? correctHwnd : WinExist("ahk_exe " this.winExe) ; Fallback
+        return correctHwnd ? correctHwnd : WinExist(this.winExe) ; Fallback
     }
 }

@@ -50,15 +50,27 @@ ShowHelpGUI() {
 
     ; --- 2. Four-Column Layout ---
     
+
+
+    ; Row 0
+    MyGui.SetFont("s12 w400 cWhite", Settings.GuiFontName)
+    MyGui.Add("Text", "x" Col1_X " y+60", "Save to Library ")
+    MyGui.SetFont("c888888")
+    MyGui.Add("Text", "x" Col2_X " yp", "Win + F5")
+    MyGui.SetFont("cWhite")
+    MyGui.Add("Text", "x" Col3_X " yp", "Mute")
+    MyGui.SetFont("c888888")
+    MyGui.Add("Text", "x" Col4_X " yp", "Win + F10")
+
     ; Row 1
     MyGui.SetFont("s12 w400 cWhite", Settings.GuiFontName)
     MyGui.Add("Text", "x" Col1_X " y+60", "Now Playing")
     MyGui.SetFont("c888888")
     MyGui.Add("Text", "x" Col2_X " yp", "Win + F6")
     MyGui.SetFont("cWhite")
-    MyGui.Add("Text", "x" Col3_X " yp", "Mute")
+    MyGui.Add("Text", "x" Col3_X " yp", "Vol -")
     MyGui.SetFont("c888888")
-    MyGui.Add("Text", "x" Col4_X " yp", "Win + F10")
+    MyGui.Add("Text", "x" Col4_X " yp", "Win + F11")
 
     ; Row 2
     MyGui.SetFont("cWhite")
@@ -66,9 +78,9 @@ ShowHelpGUI() {
     MyGui.SetFont("c888888")
     MyGui.Add("Text", "x" Col2_X " yp", "Win + F7")
     MyGui.SetFont("cWhite")
-    MyGui.Add("Text", "x" Col3_X " yp", "Vol -")
+    MyGui.Add("Text", "x" Col3_X " yp", "Vol +")
     MyGui.SetFont("c888888")
-    MyGui.Add("Text", "x" Col4_X " yp", "Win + F11")
+    MyGui.Add("Text", "x" Col4_X " yp", "Win + F12")
 
     ; Row 3
     MyGui.SetFont("cWhite")
@@ -76,9 +88,9 @@ ShowHelpGUI() {
     MyGui.SetFont("c888888")
     MyGui.Add("Text", "x" Col2_X " yp", "Win + F8")
     MyGui.SetFont("cWhite")
-    MyGui.Add("Text", "x" Col3_X " yp", "Vol +")
+    MyGui.Add("Text", "x" Col3_X " yp", "Show Help")
     MyGui.SetFont("c888888")
-    MyGui.Add("Text", "x" Col4_X " yp", "Win + F12")
+    MyGui.Add("Text", "x" Col4_X " yp", "Win + H")
 
     ; Row 4
     MyGui.SetFont("cWhite")
@@ -90,9 +102,12 @@ ShowHelpGUI() {
     MyGui.SetFont("c888888")
     MyGui.Add("Text", "x" Col4_X " yp", "Win + F")
 
+
+
     MyGui.SetFont("s11 Italic")
     MyGui.SetFont("c888888")
-    MyGui.Add("Text", "xm y+60", "*click the tray icon to play/pause")
+    MyGui.Add("Text", "xm y+60", "*click the tray icon to play/pause`n*double click the tray icon to fullscreen")
+;    MyGui.Add("Text", "xm y+20", "*double click the tray icon to fullscreen")
 
     ; Bottom spacing cushion
     MyGui.Add("Text", "xm y+40 h0 w0")

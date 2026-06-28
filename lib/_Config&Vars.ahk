@@ -53,11 +53,15 @@ Global Settings := {
         }
     }
 }
+
+
+
+
 ;@endregion
 
 ;@region INI
 SaveToINI := ["Settings.DesiredTheme"] ; what to save to INI file
-;SaveToINI.Push("Settings.SplashScreen")     ; add more to INI file
+;SaveToINI.Push("Settings.UseOSD")     ; add more to INI file
 RegisterArrayItems(SaveToINI)
 LoadINI()
 ;@endregion

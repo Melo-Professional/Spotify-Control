@@ -22,7 +22,7 @@ https://github.com/user-attachments/assets/8e9152a4-cfa2-4a03-935e-b6c222017883
   <tr>
     <td align="center">
       <strong>HotKeys</strong><br>
-      <img width="100%" alt="Hotkeys" src="https://github.com/user-attachments/assets/c9fe94d3-2dc3-469c-8b9f-35e046faef37" />
+      <img width="786" height="709" alt="image" src="https://github.com/user-attachments/assets/e7039c83-af59-44da-82f0-7080e98477bd" />
     </td>
     <td align="center">
       <strong>Control Panel</strong><br>
@@ -31,12 +31,12 @@ https://github.com/user-attachments/assets/8e9152a4-cfa2-4a03-935e-b6c222017883
   </tr> 
   <tr>
     <td align="center">
-      <strong>On Screen Display</strong><br>
-      <img width="393" height="268" alt="image" src="https://github.com/user-attachments/assets/6ab8b733-5115-44dd-8927-7564544dac2a" />
-    </td>
-    <td align="center">
       <strong>Control Spotify app or in browsers</strong><br>
       <img width="467" height="318" alt="image" src="https://github.com/user-attachments/assets/45687c79-68af-47c7-aaf3-c88c68c4e2b6" />
+    </td>
+    <td align="center">
+      <strong>On Screen Display</strong><br>
+      <img width="393" height="268" alt="image" src="https://github.com/user-attachments/assets/6ab8b733-5115-44dd-8927-7564544dac2a" />
     </td>
   </tr> 
 

@@ -3,14 +3,14 @@
 /************************************************************************
  * @description A snippet to control Spotify.
  * @author Melo (melo@meloprofessional.com)
- * @date 2026/06/28
+ * @date 2026/06/29
  * @releasedate 2026/09/19
- * @version 2.0.1.0
+ * @version 2.2.0.0
  ***********************************************************************/
 
 AppName := "Spotify Control"
 ;@Ahk2Exe-Let U_AppName = %A_PriorLine%
-AppVersion := "2.0.1.0"
+AppVersion := "2.2.0.0"
 ;@Ahk2Exe-Let U_Version = %A_PriorLine%
 AppDescription := "A snippet to control Spotify."
 ;@endregion
@@ -114,9 +114,7 @@ OSD_Volume(value, label){
         return
     }
 
-;    if OSDGeneral.IsVisible{
-        try OSDGeneral.Destroy()
-;    }
+    try OSDGeneral.Destroy()
 
     OSDVolume.ClearCells()
     ; row 1
@@ -125,12 +123,9 @@ OSD_Volume(value, label){
     OSDVolume.SetCellText( 3, 1, "      ", "Right", {FontSize: 8, FontWeight: 500})
 
     ; row 2
-;    Global volumevalue := OSDVolume.SetCellText( 1, 2, value, "Center", {FontSize: 24, FontWeight: 700}, 3, 2)
-;    Global volumeprogress := OSDVolume.SetCellProgress( 1, 3, value, "Center",,3,3)
     Global volumevalue := OSDVolume.SetCellText( 1, 2, value, "Center", {FontSize: 24, FontWeight: 700}, 3, 2)
 
     ; row 3, 4, 5
-;    OSDVolume.SetCellText( 1, 3, " ", "Right", {FontSize: 20, FontWeight: 500})
     Global volumeprogress := OSDVolume.SetCellProgress( 1, 3, value, "Center",, 3, 1)
     Global volumelabel := OSDVolume.SetCellText( 1, 4, label, "Center", {FontSize: 8, FontWeight: 100}, 3, 2)
     OSDVolume.SetCellText( 1, 5, " ", "Center", {FontSize: 1, FontWeight: 300})
@@ -152,21 +147,14 @@ OSD_CP(track, artist, time, percent){
         return
     }
 
-;    if OSDGeneral.IsVisible{
-        try OSDGeneral.Destroy()
-;    }
+    try OSDGeneral.Destroy()
 
-;    if OSD_Volume.IsVisible{
-        try OSD_Volume.Destroy()
-;    }
+    try OSD_Volume.Destroy()
 
     OSDCP.ClearCells()
     ; row 1
-    ;OSDCP.SetCellImage( 1, 1, App.Icon, "Left", 12, 1, 1)
     OSDCP.SetCellImage( 1, 1, App.Icon, "Left", 20, 1, 1)
-    ;OSDCP.SetCellText( 2, 1, App.Name, "Center", {FontSize: 7, FontWeight: 300})
     OSDCP.SetCellText( 2, 1, App.Name, "Center", {FontSize: 9, FontWeight: 300})
-    ;OSDCP.SetCellText( 3, 1, "      ", "Right", {FontSize: 8})
     OSDCP.SetCellText( 3, 1, "                   ", "Right", {FontSize: 8})
     OSDCP.SetCellText( 1, 2, " ", "Center", {FontSize: 1})
 
@@ -178,7 +166,6 @@ OSD_CP(track, artist, time, percent){
     ; row 3, 4, 5
     OSDCP.SetCellText( 1, 5, "Artist:", "Left", {FontSize: 10, FontWeight: 300})
     Global cpartist := OSDCP.SetCellText( 2, 5, artist, "Left", {FontSize: 10, FontWeight: 300}, 2)
-;    OSDCP.SetCellText( 2, 6, " ", "Center", {FontSize: 1})
 
     OSDCP.SetCellText( 1, 6, "Play time:", "Left", {FontSize: 10, FontWeight: 300})
     Global cpplaytime := OSDCP.SetCellText( 2, 6, time, "Left", {FontSize: 10, FontWeight: 300})
@@ -198,15 +185,6 @@ OSD_CP(track, artist, time, percent){
 ; --- Add to List ---
 $#F5::Spotify_UWP.AddToList()
 
-;$#F6::Spotify_UWP.Toast(
-;                          "Playing:`t`t" (song := Spotify_UWP.NowPlaying).Name
-;                        . "`nArtist:`t`t" song.Artist 
-;                        . "`nPlay time:`t" song.Time " / " song.Length
-;                        )
-
-;$#F6::OSD_CP( "Playing:`t`t" (song := Spotify_UWP.NowPlaying).Name, "`nArtist:`t`t" song.Artist, "`nPlay time:`t" song.Time " / " song.Length )
-;$#F6::OSD_CP( "Playing:`t`t" (song := Spotify_UWP.NowPlaying).Name, "`nArtist:`t`t" song.Artist, "`nPlay time:`t" song.Time " / " song.Length )
-;$#F6::OSD_CP( "#1140 - Robert Downey Jr.", "The Joe Rogan Experience", "24:08 / 1:12:19", GetPlayPercentage("24:08", "1:12:19"))
 $#F6::OSD_CP( (song := Spotify_UWP.NowPlaying).Name, song.Artist, song.Time " / " song.Length , GetPlayPercentage(song.Time, song.Length))
 
 ; --- Previous ---
@@ -222,11 +200,9 @@ $#F9::Spotify_UWP.TogglePlay()
 $#F10::Spotify_UWP.ToggleMute()
 
 ; --- Volume Down (-10%) ---
-;$#F11::Spotify_UWP.Volume -= 10 ; Spotify defaults minimum step at (100/15)
 $#F11::Spotify_UWP.Volume -= (100 / 15) ; Spotify defaults minimum step at (100/15)
 
 ; --- Volume Up (+10%) ---
-;$#F12::Spotify_UWP.Volume += 10 ; Spotify defaults minimum step at (100/15)
 $#F12::Spotify_UWP.Volume += (100 / 15) ; Spotify defaults minimum step at (100/15)
 
 ; --- Full Screen ---
@@ -298,12 +274,6 @@ if (A_Args.Length > 0) {
 ;@endregion
 
 
-;targetUrl := "https://spotify.com"
-;Run(General.CurrentPlayerExe . " " . "https://spotify.com")
-
-;Run(General.CurrentPlayerExe . ' "' . "https://spotify.com" . '"')
-
-;OSD_CP( "#1140 - Robert Downey Jr.", "The Joe Rogan Experience", "24:08 / 1:12:19", GetPlayPercentage("24:08", "1:12:19"))
 
 GetPlayPercentage(timeStr, lengthStr) {
     currentSec := 0
@@ -324,3 +294,6 @@ GetPlayPercentage(timeStr, lengthStr) {
     ; 3. Calculate percentage (prevents division by zero error if totalSec is 0)
     return (totalSec == 0) ? 0 : Round((currentSec / totalSec) * 100, 1)
 }
+
+
+#Include <TrayController>

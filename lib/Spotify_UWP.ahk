@@ -5,9 +5,8 @@
 
 UIA.AutoSetFocus := False
 Spotify_UWP.winExe := "ahk_exe " . General.CurrentPlayerExe
+
 class Spotify_UWP {
-;    static winExe := "ahk_exe " General.CurrentPlayerExe
-;    static winExe := "ahk_exe Spotify.exe"
     static winTitle => WinGetTitle(this.winExe)
     static exePath := A_AppData "\Spotify\Spotify.exe"
 
@@ -271,9 +270,6 @@ class Spotify_UWP {
             WinShow("ahk_id " targetHwnd)
             WinRestore("ahk_id " targetHwnd)
         }
-
-
-
 
         loop 5 {
             try {

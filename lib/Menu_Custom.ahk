@@ -79,65 +79,13 @@ Menu_Custom() {
     }
 
 
-/*
-    A_TrayMenu.ClickCount := 2
-;    OnMessage(0x404, TrayIconClick)
-     TrayIconClick(wParam, lParam, msg, hwnd) {
-        ; 0x202 = WM_LBUTTONUP (Left mouse button released)
-        if (lParam = 0x202) { 
-            Spotify_UWP.TogglePlay()
-            return 1
-        }
-    } */
+    A_TrayMenu.Default := "" 
 
-
-
-/*
-    A_TrayMenu.ClickCount := 2
+    ; Listen for tray icon notifications
     OnMessage(0x404, TrayIconHandler)
 
-TrayIconHandler(wParam, lParam, msg, hwnd) {
-    ; 0x201 = WM_LBUTTONDOWN (Left mouse button pressed)
-    ; Using ButtonDown is generally more reliable for multi-click timers than ButtonUp
-    if (lParam = 0x201) {
+    TrayIconHandler(wParam, lParam, msg, hwnd) {
         static clickCounter := 0
-        clickCounter++
-        
-        if (clickCounter = 1) {
-            ; Wait 250ms to see if a second click arrives. 
-            ; Adjust 250 higher if you click slowly, or lower for snappier response.
-            SetTimer(HandleClicks, -250)
-        }
-        
-        HandleClicks() {
-            if (clickCounter = 1) {
-                ; --- SINGLE CLICK ACTION ---
-                Spotify_UWP.TogglePlay()
-            } else if (clickCounter >= 2) {
-                ; --- DOUBLE CLICK ACTION ---
-                Spotify_UWP.ToggleFullscreen() ; Or whatever your fullscreen function is named
-            }
-            clickCounter := 0 ; Reset the counter for next time
-        }
-        return 1
-    }
-    
-    ; Note: We don't intercept 0x205 (WM_RBUTTONUP), 
-    ; so AHK's default right-click tray menu behavior stays perfectly intact!
-}
-
-*/
-
-
-
-; Disable the default menu action when double-clicking the icon
-A_TrayMenu.Default := "" 
-
-; Listen for tray icon notifications
-OnMessage(0x404, TrayIconHandler)
-
-TrayIconHandler(wParam, lParam, msg, hwnd) {
-    static clickCounter := 0
 
     ; 0x201 = WM_LBUTTONDOWN
     if (lParam = 0x201) {
@@ -160,6 +108,12 @@ TrayIconHandler(wParam, lParam, msg, hwnd) {
         if (clickCounter = 1) {
             ; --- 1 CLICK ---
             Spotify_UWP.TogglePlay()
+;        CoordMode("Mouse", "Screen")
+;        MouseGetPos(&mouseX, &mouseY)
+;        TrayControllerGUI.Show("X" . (mouseX - 57) . " Y" . (mouseY - 150) . " NoActivate")
+;        global LeaveCount := 0 
+;        SetTimer(HideGuiWhenMouseLeaves, 400)
+
         } else if (clickCounter >= 2) {
             ; --- 2 CLICKS ---
             Spotify_UWP.ToggleFullscreen()

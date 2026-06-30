@@ -25,10 +25,21 @@ https://github.com/user-attachments/assets/8e9152a4-cfa2-4a03-935e-b6c222017883
       <img width="100%" alt="Hotkeys" src="https://github.com/user-attachments/assets/c9fe94d3-2dc3-469c-8b9f-35e046faef37" />
     </td>
     <td align="center">
-      <strong>Now Playing</strong><br>
-     <img width="100%" alt="NowPlaying" src="https://github.com/user-attachments/assets/5120da4e-7103-4e64-90d8-59fec98a63a6" />
+      <strong>Control Panel</strong><br>
+      <img width="100%" alt="Control Panel" src="https://github.com/user-attachments/assets/67fafce3-7288-4593-b437-f16d3d0cb0ab" />
     </td>
   </tr> 
+  <tr>
+    <td align="center">
+      <strong>On Screen Display</strong><br>
+      <img width="393" height="268" alt="image" src="https://github.com/user-attachments/assets/6ab8b733-5115-44dd-8927-7564544dac2a" />
+    </td>
+    <td align="center">
+      <strong>Control Spotify app or in browsers</strong><br>
+      <img width="467" height="318" alt="image" src="https://github.com/user-attachments/assets/45687c79-68af-47c7-aaf3-c88c68c4e2b6" />
+    </td>
+  </tr> 
+
 </table>
   
   

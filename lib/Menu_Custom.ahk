@@ -11,6 +11,10 @@ Menu_Custom() {
 
     TrayMenu := A_TrayMenu
 
+    ; SC Reload fix
+    TrayMenu.Delete("Restart")
+    TrayMenu.Insert("Exit", "Restart", (*) => Reload())
+
     PlayerMenu := Menu()
     for name, exe in Players.OwnProps() {
         PlayerMenu.Add(name, PlayerHandler)

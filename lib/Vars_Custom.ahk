@@ -73,6 +73,7 @@ OSDVolume.ProgressFgDark    := "748B15"
 
 Global OSDCP            := OSDCustom("Volume")
 OSDCP.MinWidth          := 360
+OSDCP.MaxWidth          := 360
 OSDCP.MarginX           := 20
 OSDCP.MarginY           := 10
 OSDCP.Position          := "x0.87 y0.90"

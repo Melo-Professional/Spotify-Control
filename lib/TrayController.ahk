@@ -1,8 +1,10 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 
-global MyTrayController := TrayControllerClass()
-A_IconTip := ""
+try {
+    global MyTrayController := TrayControllerClass()
+    A_IconTip := ""
+}
 
 Class TrayControllerClass {
     ; --- Internal Properties ---

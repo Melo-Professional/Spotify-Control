@@ -3,14 +3,14 @@
 /************************************************************************
  * @description A snippet to control Spotify.
  * @author Melo (melo@meloprofessional.com)
- * @date 2026/06/29
+ * @date 2026/07/06
  * @releasedate 2026/09/19
- * @version 2.2.0.0
+ * @version 2.3.1.0
  ***********************************************************************/
 
 AppName := "Spotify Control"
 ;@Ahk2Exe-Let U_AppName = %A_PriorLine%
-AppVersion := "2.2.0.0"
+AppVersion := "2.3.1.0"
 ;@Ahk2Exe-Let U_Version = %A_PriorLine%
 AppDescription := "A snippet to control Spotify."
 ;@endregion
@@ -94,8 +94,8 @@ OSD_General(image, label){
 ;    Global generalimage := OSD.SetCellText( 1, 2, image, "Center", {FontSize: 24, FontWeight: 700}, 3)
     try Global generalimage := OSDGeneral.SetCellImage( 1, 2, image, "Center", 50, 3, 2)
 
-    ; row 3, 4, 5
-    OSDVolume.SetCellText( 1, 3, " ", "Right", {FontSize: 20, FontWeight: 500})
+    ; row 3, 4, 5 ; check
+    OSDGeneral.SetCellText( 1, 3, " ", "Right", {FontSize: 20, FontWeight: 500})
     Global generallabel := OSDGeneral.SetCellText( 1, 4, label, "Center", {FontSize: 8, FontWeight: 100}, 3, 2)
     OSDGeneral.SetCellText( 1, 5, " ", "Center", {FontSize: 1, FontWeight: 300})
 
@@ -155,12 +155,18 @@ OSD_CP(track, artist, time, percent){
     ; row 1
     OSDCP.SetCellImage( 1, 1, App.Icon, "Left", 20, 1, 1)
     OSDCP.SetCellText( 2, 1, App.Name, "Center", {FontSize: 9, FontWeight: 300})
-    OSDCP.SetCellText( 3, 1, "                   ", "Right", {FontSize: 8})
+    OSDCP.SetCellText( 3, 1, " ", "Right", {FontSize: 8})
     OSDCP.SetCellText( 1, 2, " ", "Center", {FontSize: 1})
 
     ; row 2
     OSDCP.SetCellText( 1, 3, "Playing:", "Left", {FontSize: 10, FontWeight: 300}, 1, 2)
-    Global cpplaying := OSDCP.SetCellText( 2, 3, track, "Left", {FontSize: 14, FontWeight: 500}, 1, 2)
+
+    displayTrack := (StrLen(track) > 27) ? SubStr(track, 1, 30) "..." : track
+
+;    Global cpplaying := OSDCP.SetCellText( 2, 3, track, "Left", {FontSize: 14, FontWeight: 500}, 1, 2)
+    Global cpplaying := OSDCP.SetCellText(2, 3, displayTrack, "Left", {FontSize: 11, FontWeight: 500}, 1, 2)
+
+
     OSDCP.SetCellText( 2, 4, " ", "Center", {FontSize: 1})
 
     ; row 3, 4, 5

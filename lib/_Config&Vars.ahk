@@ -1,8 +1,8 @@
 /************************************************************************
  * @description Config&Vars
  * @author Melo (melo@meloprofessional.com)
- * @date 2026/06/08
- * @version 1.3.0
+ * @date 2026/07/01
+ * @version 1.4.0
  ***********************************************************************/
 
 ;@region Configuration
@@ -18,7 +18,8 @@ Global App := {
     Icon:                       A_IsCompiled ? A_ScriptFullPath : A_ScriptDir "\lib\app.ico",
     IconPaused:                 A_IsCompiled ? A_ScriptFullPath : A_ScriptDir "\lib\app_Pause.ico",
     Copyright:                  "Developed by Melo`nmelo@meloprofessional.com`n©Melo. All rights reserved.",
-    Version:                    AppVersion
+    Version:                    AppVersion,
+    Github:                    ""
 }
 
 Global Settings := {
@@ -53,15 +54,11 @@ Global Settings := {
         }
     }
 }
-
-
-
-
 ;@endregion
 
 ;@region INI
 SaveToINI := ["Settings.DesiredTheme"] ; what to save to INI file
-;SaveToINI.Push("Settings.UseOSD")     ; add more to INI file
+;SaveToINI.Push("Settings.SplashScreen")     ; add more to INI file
 RegisterArrayItems(SaveToINI)
 LoadINI()
 ;@endregion

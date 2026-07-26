@@ -1,9 +1,11 @@
 <h1 align="center">Spotify-Control</h1>
 <p align="center">
-
-![version](https://img.shields.io/github/v/release/Melo-Professional/Spotify-Control?sort=semver&color=purple)![](https://img.shields.io/static/v1?label=made%20with&message=%E2%9D%A4&color=red)
+  <a href="https://github.com/Melo-Professional/Spotify-Control/releases"><img src="https://img.shields.io/github/v/release/Melo-Professional/Spotify-Control?sort=semver&color=purple" alt="version"></a>
+    <a href="#screenshots"><img src="https://img.shields.io/static/v1?label=made%20with&message=%E2%9D%A4&color=red"></a>
 </p>
+
 <p align="center">A snippet to control Spotify.</p>
+
 
 > [!NOTE]
 > Control Spotify in background  

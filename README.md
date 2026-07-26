@@ -6,7 +6,7 @@
 
 <p align="center">A snippet to control Spotify.</p>
 
-
+---
 > [!NOTE]
 > Control Spotify in background  
 > Click the tray icon to instant toggle Play / Pause  

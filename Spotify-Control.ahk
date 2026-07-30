@@ -3,17 +3,19 @@
 /************************************************************************
  * @description A snippet to control Spotify.
  * @author Melo (melo@meloprofessional.com)
- * @date 2026/07/06
+ * @date 2026/07/30
  * @releasedate 2026/09/19
- * @version 2.3.1.0
+ * @version 2.4.0.0
  ***********************************************************************/
 
 AppName := "Spotify Control"
 ;@Ahk2Exe-Let U_AppName = %A_PriorLine%
-AppVersion := "2.3.1.0"
+AppVersion := "2.4.0.0"
 ;@Ahk2Exe-Let U_Version = %A_PriorLine%
 AppDescription := "A snippet to control Spotify."
 ;@endregion
+
+;_bkpMode := "AppVersionAndMinutes"
 
 ;@region Directives
 #Requires AutoHotkey v2.0
@@ -34,19 +36,28 @@ A_HotkeyInterval := 1000
 
 ;@region Includes
 #Include *i <_CompilerDirectives>
+#Include *i <_Backup>
 #Include *i <_Config&Vars>
 #Include *i <_MsgBoxCustom>
 #Include *i <_SaveSettings>
+;#Include *i <_MessageManager>
 #Include *i <_Theme>
-#Include <_OSDCustom>
+#Include *i <_FrostedTheme>
+#Include *i <_TitleBar>
+;#Include *i <_ModernSlider>
 ;#Include *i <_Color_Picker_Dialog>
-#Include <_SplashScreen>
+;#Include *i <_ReloadWithArgs>
+;#Include *i <_HotkeysRecorder>
+;#Include *i <_ODColors>
+#Include *i <_OSDCustom>
+#Include *i <_SplashScreen>
+#Include *i <_About>
 ;#Include *i <_Help>
 #Include *i <_Menu>
 
 #Include <Translations>
 #Include <Vars_Custom>
-#Include <About>
+;#Include <About>
 #Include <UIA>
 #Include <Spotify_UWP>
 #Include <Menu_Custom>
@@ -55,8 +66,8 @@ A_HotkeyInterval := 1000
 
 ;@region Startup
 ; SPLASHSCREEN
-if IsSet(SplashScreen) && (A_Args.Length == 0){
-    SplashScreen("Icon")
+if (A_Args.Length == 0) && IsSet(SplashScreen){
+    SplashScreen()
 }
 
 ; TRAY ICON + MENU
@@ -179,7 +190,7 @@ OSD_CP(track, artist, time, percent){
 
     OSDCP.SetCellText( 1, 9, " ", "Center", {FontSize: 10})
 
-    OSDCP.Show(,7000)
+    OSDCP.Show(,,7000)
 }
 
 

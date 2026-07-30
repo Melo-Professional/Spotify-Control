@@ -1,6 +1,6 @@
 /************************************************************************
  * @description OSDCustom (Dynamic Styling & Multi-Column Grid Engine)
- * @version 6.13.1 (UpdateImageObject method )
+ * @version 6.15.0 (Default Text for show )
  ***********************************************************************/
 
 #Requires AutoHotkey v2.0
@@ -90,7 +90,11 @@ class OSDCustom {
         this.SlideOutCb := ObjBindMethod(this, "AnimateSlideOut")
         this.DestroyCb := ObjBindMethod(this, "Destroy")
 
-        OnMessage(0x001A, ObjBindMethod(this, "OnSettingChange"))
+        if IsSet(MessageManager) {
+            MessageManager.Register(0x001A, ObjBindMethod(this, "OnSettingChange"))
+        } else {
+            OnMessage(0x001A, ObjBindMethod(this, "OnSettingChange"))
+        }
     }
 
     ; --- Cell definition methods ---
@@ -211,7 +215,7 @@ class OSDCustom {
 
     ; --- Main Show method ---
 
-    Show(Position := "", TimeOut := "", Progress := "") {
+    Show(Text?, Position := "", TimeOut := "", Progress := "") {
         Critical("On")
         this.InternalState := "Assembling"
 
@@ -226,8 +230,12 @@ class OSDCustom {
         if (Progress !== "")
             this.ProgressValue := Progress
 
-        if (this.Cells.Length == 0) {
-            this.SetCellText(1, 1, A_LineFile, "Center")
+        if !IsSet(Text) && (this.Cells.Length == 0) {
+            this.SetCellText(2, 2, A_LineFile, "Center")
+        }
+
+        if IsSet(Text) {
+            this.SetCellText(2, 2, Text, "Center")
         }
 
         if (this.MyGui) {
@@ -469,7 +477,7 @@ class OSDCustom {
                 barH := (this.HasProp("ProgressBarHeight") && this.ProgressBarHeight > 0) ? this.ProgressBarHeight : 6
                 
                 ; Calculate centered vertical offset relative to the row's total text height
-                barY := cellY + (cellH - barH) / 2
+                barY := (cellY + (cellH - barH) / 2) + 1
                 ; --------------------------------
 
                 ctrl := this.MyGui.AddProgress(

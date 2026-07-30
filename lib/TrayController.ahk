@@ -43,6 +43,33 @@ Class TrayControllerClass {
 
         ; 2. Build the GUI container
         this.guiObj := Gui("+AlwaysOnTop -Caption -SysMenu +ToolWindow +Owner")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         this.guiObj.MarginX := 20
         this.guiObj.MarginY := 20
         
@@ -296,6 +323,13 @@ Class TrayControllerClass {
         this.mouseX := currentX
         this.mouseY := currentY
         
+
+
+            %"ApplyThemeToGui"%(this.guiObj, "Dark")
+            %"FrostedTheme"%.Apply(this.guiObj)
+
+
+
         this.guiObj.Show("X" . (this.mouseX - 72) . " Y" . (this.mouseY - 130) . " NoActivate")
         this.isGuiVisible := true 
         

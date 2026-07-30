@@ -18,10 +18,56 @@ ShowHelpGUI() {
 
     MyGuiTitle := "Help"
     MyGuiOptions := "-Caption +AlwaysOnTop +ToolWindow +E0x08000000" ; WS_EX_NOACTIVATE initially to prevent focus fights
-    MyGui := Gui(MyGuiOptions, MyGuiTitle)
-    MyGui.BackColor := "141313"
+;    MyGui := Gui(MyGuiOptions, MyGuiTitle)
+;    MyGui.BackColor := "141313"
     
-    WinSetTransparent(243, MyGui)
+;    WinSetTransparent(243, MyGui)
+
+
+    MyGui := Gui(MyGuiOptions, MyGuiTitle)
+    MyGui.SetFont("s" Settings.GuiFontSizeMedium, Settings.GuiFontName)
+    offset := 10
+
+/* 
+    if IsFunctionDefined("CustomTitleBar") {
+        MyGui.Opt("-Caption")
+        titlebar := %"CustomTitleBar"%.Attach(MyGui, {
+            Title: MyGuiTitle,
+            ShowIcon: true,
+            Min: true,
+            Max: false,
+            Close: true
+        })
+        offset := 60
+        DllCall("dwmapi\DwmSetWindowAttribute", "Ptr", MyGui.Hwnd, "UInt", 33, "Int*", 2, "UInt", 4)
+    }
+ */
+    UseAcrylicGUI := false
+    if IsFunctionDefined("FrostedTheme") {
+        UseAcrylicGUI := true
+        offset := 60
+    }
+
+        DllCall("dwmapi\DwmSetWindowAttribute", "Ptr", MyGui.Hwnd, "UInt", 33, "Int*", 2, "UInt", 4)
+
+    TextNormalColor := "CCCCCC"
+    TextHoverColor  := "FFFFFF"
+    BGroundNormalColor  := "1b1b1b"
+    BGroundHoverColor  := "313131"
+    isHovering := false
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Setting structural grid coordinates
     GuiWidth     := 760  
@@ -38,11 +84,11 @@ ShowHelpGUI() {
     try {
         MyGui.Add("Picture", "w48 h-1 xm ym", App.Icon)
     } catch {
-        MyGui.SetFont("s16 w700 cWhite", Settings.GuiFontName)
+        MyGui.SetFont("s16 w100 cWhite", Settings.GuiFontName)
         MyGui.Add("Text", "w32 h32 xm ym", "[i]")
     }
     
-    MyGui.SetFont("s16 w700 cWhite", Settings.GuiFontName)
+    MyGui.SetFont("s16 w800 cWhite", Settings.GuiFontName)
     MyGui.Add("Text", "x+25 y" (MyGui.MarginY + 8), "Hotkeys")
 
     ; Divider Line
@@ -53,58 +99,58 @@ ShowHelpGUI() {
 
 
     ; Row 0
-    MyGui.SetFont("s12 w400 cWhite", Settings.GuiFontName)
+    MyGui.SetFont("s12 w100 cWhite", Settings.GuiFontName)
     MyGui.Add("Text", "x" Col1_X " y+60", "Save to Library ")
-    MyGui.SetFont("c888888")
+    MyGui.SetFont("w700 c888888")
     MyGui.Add("Text", "x" Col2_X " yp", "Win + F5")
-    MyGui.SetFont("cWhite")
+    MyGui.SetFont("w100 cWhite")
     MyGui.Add("Text", "x" Col3_X " yp", "Mute")
-    MyGui.SetFont("c888888")
+    MyGui.SetFont("w700 c888888")
     MyGui.Add("Text", "x" Col4_X " yp", "Win + F10")
 
     ; Row 1
-    MyGui.SetFont("s12 w400 cWhite", Settings.GuiFontName)
+    MyGui.SetFont("s12 w100 cWhite", Settings.GuiFontName)
     MyGui.Add("Text", "x" Col1_X " y+60", "Now Playing")
-    MyGui.SetFont("c888888")
+    MyGui.SetFont("w700 c888888")
     MyGui.Add("Text", "x" Col2_X " yp", "Win + F6")
-    MyGui.SetFont("cWhite")
+    MyGui.SetFont("w100 cWhite")
     MyGui.Add("Text", "x" Col3_X " yp", "Vol -")
-    MyGui.SetFont("c888888")
+    MyGui.SetFont("w700 c888888")
     MyGui.Add("Text", "x" Col4_X " yp", "Win + F11")
 
     ; Row 2
-    MyGui.SetFont("cWhite")
+    MyGui.SetFont("w100 cWhite")
     MyGui.Add("Text", "x" Col1_X " y+60", "Previous")
-    MyGui.SetFont("c888888")
+    MyGui.SetFont("w700 c888888")
     MyGui.Add("Text", "x" Col2_X " yp", "Win + F7")
-    MyGui.SetFont("cWhite")
+    MyGui.SetFont("w100 cWhite")
     MyGui.Add("Text", "x" Col3_X " yp", "Vol +")
-    MyGui.SetFont("c888888")
+    MyGui.SetFont("w700 c888888")
     MyGui.Add("Text", "x" Col4_X " yp", "Win + F12")
 
     ; Row 3
-    MyGui.SetFont("cWhite")
+    MyGui.SetFont("w100 cWhite")
     MyGui.Add("Text", "x" Col1_X " y+60", "Next")
-    MyGui.SetFont("c888888")
+    MyGui.SetFont("w700 c888888")
     MyGui.Add("Text", "x" Col2_X " yp", "Win + F8")
-    MyGui.SetFont("cWhite")
+    MyGui.SetFont("w100 cWhite")
     MyGui.Add("Text", "x" Col3_X " yp", "Show Help")
-    MyGui.SetFont("c888888")
+    MyGui.SetFont("w700 c888888")
     MyGui.Add("Text", "x" Col4_X " yp", "Win + H")
 
     ; Row 4
-    MyGui.SetFont("cWhite")
+    MyGui.SetFont("w100 cWhite")
     MyGui.Add("Text", "x" Col1_X " y+60", "Play/Pause")
-    MyGui.SetFont("c888888")
+    MyGui.SetFont("w700 c888888")
     MyGui.Add("Text", "x" Col2_X " yp", "Win + F9")
-    MyGui.SetFont("cWhite")
+    MyGui.SetFont("w100 cWhite")
     MyGui.Add("Text", "x" Col3_X " yp", "Full screen")
-    MyGui.SetFont("c888888")
+    MyGui.SetFont("w700 c888888")
     MyGui.Add("Text", "x" Col4_X " yp", "Win + F")
 
 
 
-    MyGui.SetFont("s11 Italic")
+    MyGui.SetFont("w100 s9 Italic")
     MyGui.SetFont("c888888")
     MyGui.Add("Text", "xm y+60", "*click the tray icon to play/pause`n*double click the tray icon to fullscreen")
 ;    MyGui.Add("Text", "xm y+20", "*double click the tray icon to fullscreen")
@@ -116,6 +162,30 @@ ShowHelpGUI() {
     MyGui.OnEvent("Close", CleanDestroy)
     MyGui.OnEvent("Escape", CleanDestroy)
     
+
+
+
+
+
+
+
+    if UseAcrylicGUI {
+        if IsFunctionDefined("ApplyThemeToGui")
+            %"ApplyThemeToGui"%(MyGui, "Dark")
+        if IsFunctionDefined("FrostedTheme")
+            %"FrostedTheme"%.Apply(MyGui)
+    }
+
+
+
+
+
+
+
+
+
+
+
     ; Display and force direct keyboard focus onto the GUI window
     MyGui.Show("w" GuiWidth)
     WinActivate("ahk_id " MyGui.Hwnd)
@@ -150,6 +220,11 @@ ShowHelpGUI() {
         if (hwnd == MyGui.Hwnd) {
             CleanDestroy()
         }
+    }
+
+	IsFunctionDefined(Name) {
+        try return HasMethod(%Name%)
+        return false
     }
 
     CleanDestroy(*) {

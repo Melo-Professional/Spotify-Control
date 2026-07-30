@@ -39,15 +39,15 @@ Players := {
 General.CurrentPlayerName := "Spotify",
 General.CurrentPlayerExe :=  "spotify.exe"
 
-imagePlay :=            A_ScriptDir ".\images\play.png"
-imagePause :=           A_ScriptDir ".\images\pause.png"
-imageAdd :=             A_ScriptDir ".\images\add.png"
-imageConnect :=         A_ScriptDir ".\images\connect.png"
-imageFullscreen :=      A_ScriptDir ".\images\fullscreen.png"
-imageNext :=            A_ScriptDir ".\images\next.png"
-imagePrevious :=        A_ScriptDir ".\images\previous.png"
-imageMute :=            A_ScriptDir ".\images\mute.png"
-imageUnmute :=          A_ScriptDir ".\images\unmute.png"
+imagePlay :=            A_ScriptDir ".\assets\images\play.png"
+imagePause :=           A_ScriptDir ".\assets\images\pause.png"
+imageAdd :=             A_ScriptDir ".\assets\images\add.png"
+imageConnect :=         A_ScriptDir ".\assets\images\connect.png"
+imageFullscreen :=      A_ScriptDir ".\assets\images\fullscreen.png"
+imageNext :=            A_ScriptDir ".\assets\images\next.png"
+imagePrevious :=        A_ScriptDir ".\assets\images\previous.png"
+imageMute :=            A_ScriptDir ".\assets\images\mute.png"
+imageUnmute :=          A_ScriptDir ".\assets\images\unmute.png"
 ;imageUnmute :=          A_ScriptDir ".\images\unmute.svg"
 
 Global OSDGeneral           := OSDCustom("General")

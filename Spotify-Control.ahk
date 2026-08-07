@@ -3,14 +3,14 @@
 /************************************************************************
  * @description A snippet to control Spotify.
  * @author Melo (melo@meloprofessional.com)
- * @date 2026/07/30
+ * @date 2026/08/06
  * @releasedate 2026/09/19
- * @version 2.4.0.0
+ * @version 2.5.0.0
  ***********************************************************************/
 
 AppName := "Spotify Control"
 ;@Ahk2Exe-Let U_AppName = %A_PriorLine%
-AppVersion := "2.4.0.0"
+AppVersion := "2.5.0.0"
 ;@Ahk2Exe-Let U_Version = %A_PriorLine%
 AppDescription := "A snippet to control Spotify."
 ;@endregion
@@ -50,6 +50,7 @@ A_HotkeyInterval := 1000
 ;#Include *i <_HotkeysRecorder>
 ;#Include *i <_ODColors>
 #Include *i <_OSDCustom>
+#Include *i <_AutoUpdater>
 #Include *i <_SplashScreen>
 #Include *i <_About>
 ;#Include *i <_Help>
@@ -73,6 +74,10 @@ if (A_Args.Length == 0) && IsSet(SplashScreen){
 ; TRAY ICON + MENU
 StartMenu()
 Menu_Custom()
+if IsSet(StartAutoUpdater) {
+	%"StartAutoUpdater"%()
+}
+
 ;@endregion
 ;@endregion
 
@@ -253,7 +258,7 @@ ReloadWithArgs(callerName := "", paramValue := "") {
 }
 
 ; CHECK RELOAD ARGUMENTS
-if (A_Args.Length > 0) {
+if (A_Args.Length > 0)  && !RegExMatch(A_Args[1], "i)^--signal-update-success=") {
     targetFuncName := A_Args[1]
     if !A_IsCompiled && Debug
         ToolTip("reload with args " A_Args[1])

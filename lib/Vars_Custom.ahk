@@ -8,6 +8,13 @@
 ;@region VARS
 ; CUSTOM VARIABLES
 App.Github := "https://github.com/Melo-Professional/Spotify-Control"
+if (App.HasOwnProp("Github")  && App.Github != "" && App.Github != "https://github.com/Melo-Professional/") {
+	App.UpdateAuto := true
+	App.UpdateFrequencyDays := 3
+	App.UpdateLastCheck := ""
+	SaveToINI.Push("App.UpdateAuto", "App.UpdateFrequencyDays", "App.UpdateLastCheck")
+}
+
 General := {
     CurrentLang : ""
 }

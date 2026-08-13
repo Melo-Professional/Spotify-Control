@@ -16,7 +16,17 @@ if (App.HasOwnProp("Github")  && App.Github != "" && App.Github != "https://gith
 }
 
 General := {
-    CurrentLang : ""
+    CurrentLang : "",
+	HK_ToggleFullscreen : "#f",
+	HK_ShowHelpGUI : "#h",
+	HK_AddToList : "#F5",
+	HK_OSD_CP : "#F6",
+	HK_PreviousSong : "#F7",
+	HK_NextSong : "#F8",
+	HK_TogglePlay : "#F9",
+	HK_ToggleMute : "#F10",
+	HK_VolumeDown : "#F11",
+	HK_VolumeUp : "#F12",
 }
 
 General.CurrentLang := GetSystemLangCode()
@@ -57,20 +67,20 @@ imageMute :=            A_ScriptDir ".\assets\images\mute.png"
 imageUnmute :=          A_ScriptDir ".\assets\images\unmute.png"
 ;imageUnmute :=          A_ScriptDir ".\images\unmute.svg"
 
-Global OSDGeneral           := OSDCustom("General")
+Global OSDGeneral           := OSDCustom()
 OSDGeneral.MinWidth         := 160
-OSDGeneral.MarginX          := 16
+OSDGeneral.MarginX          := 8
 OSDGeneral.MarginY          := 5
-OSDGeneral.Position         := "x0.90 y0.95"
+OSDGeneral.Position         := "x0.90 y0.90"
 OSDGeneral.TimeOut          := 1800
 OSDGeneral.FontSize         := 9
 OSDGeneral.FontName         := "Segoe UI"
 
-Global OSDVolume            := OSDCustom("Volume")
+Global OSDVolume            := OSDCustom()
 OSDVolume.MinWidth          := 160
-OSDVolume.MarginX           := 16
+OSDVolume.MarginX           := 8
 OSDVolume.MarginY           := 5
-OSDVolume.Position          := "x0.90 y0.95"
+OSDVolume.Position          := "x0.90 y0.90"
 OSDVolume.TimeOut           := 1800
 OSDVolume.FontSize          := 9
 OSDVolume.FontName          := "Segoe UI"
@@ -78,13 +88,13 @@ OSDVolume.ProgressFgLight   := "465710"
 OSDVolume.ProgressFgDark    := "748B15"
 
 
-Global OSDCP            := OSDCustom("Volume")
+Global OSDCP            := OSDCustom()
 OSDCP.MinWidth          := 360
 OSDCP.MaxWidth          := 360
 OSDCP.MarginX           := 20
 OSDCP.MarginY           := 10
 OSDCP.Position          := "x0.87 y0.90"
-OSDCP.TimeOut           := 3000
+OSDCP.TimeOut           := 7000
 OSDCP.FontSize          := 9
 OSDCP.FontName          := "Segoe UI"
 OSDCP.ProgressBarHeight := 9
@@ -98,7 +108,12 @@ OSDCP.ProgressBgDark   := "29330a"
 
 
 ;@region INI
-SaveToINI.Push("OSDSettings.UseOSD", "General.CurrentLang", "Settings.UseOSD", "General.CurrentPlayerExe", "General.CurrentPlayerName")     ; add more to INI file
+SaveToINI.Push("OSDSettings.UseOSD", "General.CurrentLang", "Settings.UseOSD", "General.CurrentPlayerExe",
+				"General.CurrentPlayerName", "General.HK_ToggleFullscreen", "General.HK_ShowHelpGUI",
+				"General.HK_AddToList", "General.HK_OSD_CP", "General.HK_PreviousSong",
+				"General.HK_NextSong", "General.HK_TogglePlay", "General.HK_ToggleMute",
+				"General.HK_VolumeDown", "General.HK_VolumeUp"
+				)
 RegisterArrayItems(SaveToINI)
 LoadINI()
 ;@endregion

@@ -3,19 +3,20 @@
 /************************************************************************
  * @description A snippet to control Spotify.
  * @author Melo (melo@meloprofessional.com)
- * @date 2026/08/12
+ * @date 2026/08/13
  * @releasedate 2026/09/19
- * @version 2.6.0.100
+ * @version 2.7.0.0
  ***********************************************************************/
 
 AppName := "Spotify Control"
 ;@Ahk2Exe-Let U_AppName = %A_PriorLine%
-AppVersion := "2.6.0.100"
+AppVersion := "2.7.0.0"
 ;@Ahk2Exe-Let U_Version = %A_PriorLine%
 AppDescription := "A snippet to control Spotify."
 ;@endregion
 
 ;_bkpMode := "AppVersionAndMinutes"
+;_bkpMinutesThreshold := 5
 
 ;@region Directives
 #Requires AutoHotkey v2.0
@@ -37,17 +38,17 @@ A_HotkeyInterval := 1000
 ;@region Includes
 #Include *i <_CompilerDirectives>
 #Include *i <_Backup>
+#Include *i <_HelperFuncs>
 #Include *i <_Config&Vars>
-#Include *i <_MsgBoxCustom>
 #Include *i <_SaveSettings>
 ;#Include *i <_MessageManager>
+;#Include *i <_TrayIconHandler>
 #Include *i <_Theme>
 #Include *i <_FrostedTheme>
 #Include *i <_TitleBar>
 ;#Include *i <_ModernSlider>
 ;#Include *i <_Color_Picker_Dialog>
-;#Include *i <_ReloadWithArgs>
-;#Include *i <_HotkeysRecorder>
+#Include *i <_HotkeysRecorder>
 ;#Include *i <_ODColors>
 #Include *i <_OSDCustom>
 #Include *i <_AutoUpdater>
@@ -63,21 +64,18 @@ A_HotkeyInterval := 1000
 #Include <Spotify_UWP>
 #Include <Menu_Custom>
 #Include <Help>
+#Include <TrayController>
+
 ;@endregion
 
 ;@region Startup
 ; SPLASHSCREEN
-if (A_Args.Length == 0) && IsSet(SplashScreen){
+if !A_Args.Length && IsSet(SplashScreen) {
     SplashScreen()
 }
-
-; TRAY ICON + MENU
-StartMenu()
-Menu_Custom()
-if IsSet(StartAutoUpdater) {
-	%"StartAutoUpdater"%()
-}
-
+IsFunctionDefined("StartMenu")			? %"StartMenu"%()			: ""
+IsFunctionDefined("Menu_Custom")		? %"Menu_Custom"%()			: ""
+IsFunctionDefined("StartAutoUpdater")	? %"StartAutoUpdater"%()	: ""
 ;@endregion
 ;@endregion
 
@@ -96,24 +94,15 @@ OSD_General(image, label){
         return
     }
 
-;    if OSDVolume.IsVisible{
-        try OSDVolume.Destroy()
-;    }
+    try OSDVolume.Destroy()
+    try OSD_CP.Destroy()
 
     OSDGeneral.ClearCells()
-    ; row 1
-    OSDGeneral.SetCellImage( 1, 1, App.Icon, "Left", 12, 1, 1)
-    OSDGeneral.SetCellText( 2, 1, App.Name, "Center", {FontSize: 7, FontWeight: 300})
-    OSDGeneral.SetCellText( 3, 1, "      ", "Right", {FontSize: 8, FontWeight: 500})
-
-    ; row 2
-;    Global generalimage := OSD.SetCellText( 1, 2, image, "Center", {FontSize: 24, FontWeight: 700}, 3)
-    try Global generalimage := OSDGeneral.SetCellImage( 1, 2, image, "Center", 50, 3, 2)
-
-    ; row 3, 4, 5 ; check
-    OSDGeneral.SetCellText( 1, 3, " ", "Right", {FontSize: 20, FontWeight: 500})
-    Global generallabel := OSDGeneral.SetCellText( 1, 4, label, "Center", {FontSize: 8, FontWeight: 100}, 3, 2)
-    OSDGeneral.SetCellText( 1, 5, " ", "Center", {FontSize: 1, FontWeight: 300})
+    OSDGeneral.SetCellImage( 1, 1, App.Icon, "Left", 12)
+    OSDGeneral.SetCellText( 1, 1, App.Name, "Center", {FontSize: 7, FontWeight: 300},2)
+    try Global generalimage := OSDGeneral.SetCellImage( 1, 2, image, "Center", 60, 2, 1)
+    Global generallabel := OSDGeneral.SetCellText( 1, 3, label, "Center", {FontWeight: 800}, 2, 2)
+    OSDGeneral.SetCellText( 2, 4, " ", "Center", {FontSize: 1})
 
     OSDGeneral.Show()
 }
@@ -131,19 +120,15 @@ OSD_Volume(value, label){
     }
 
     try OSDGeneral.Destroy()
+    try OSD_CP.Destroy()
+
 
     OSDVolume.ClearCells()
-    ; row 1
-    OSDVolume.SetCellImage( 1, 1, App.Icon, "Left", 12, 1, 1)
-    OSDVolume.SetCellText( 2, 1, App.Name, "Center", {FontSize: 7, FontWeight: 300})
-    OSDVolume.SetCellText( 3, 1, "      ", "Right", {FontSize: 8, FontWeight: 500})
-
-    ; row 2
-    Global volumevalue := OSDVolume.SetCellText( 1, 2, value, "Center", {FontSize: 24, FontWeight: 700}, 3, 2)
-
-    ; row 3, 4, 5
-    Global volumeprogress := OSDVolume.SetCellProgress( 1, 3, value, "Center",, 3, 1)
-    Global volumelabel := OSDVolume.SetCellText( 1, 4, label, "Center", {FontSize: 8, FontWeight: 100}, 3, 2)
+    OSDVolume.SetCellImage( 1, 1, App.Icon, "Left", 12)
+    OSDVolume.SetCellText( 1, 1, App.Name, "Center", {FontSize: 7, FontWeight: 300},2)
+    Global volumevalue := OSDVolume.SetCellText( 1, 2, value, "Center", {FontSize: 24, FontWeight: 700}, 2, 1)
+    Global volumeprogress := OSDVolume.SetCellProgress( 1, 3, value, "Center",, 2, 1)
+    Global volumelabel := OSDVolume.SetCellText( 1, 4, label, "Center", {FontWeight: 800}, 2, 2)
     OSDVolume.SetCellText( 1, 5, " ", "Center", {FontSize: 1, FontWeight: 300})
 
     OSDVolume.Show()
@@ -164,38 +149,24 @@ OSD_CP(track, artist, time, percent){
     }
 
     try OSDGeneral.Destroy()
-
     try OSD_Volume.Destroy()
 
     OSDCP.ClearCells()
-    ; row 1
-    OSDCP.SetCellImage( 1, 1, App.Icon, "Left", 20, 1, 1)
-    OSDCP.SetCellText( 2, 1, App.Name, "Center", {FontSize: 9, FontWeight: 300})
-    OSDCP.SetCellText( 3, 1, " ", "Right", {FontSize: 8})
-    OSDCP.SetCellText( 1, 2, " ", "Center", {FontSize: 1})
-
-    ; row 2
-    OSDCP.SetCellText( 1, 3, "Playing:", "Left", {FontSize: 10, FontWeight: 300}, 1, 2)
-
     displayTrack := (StrLen(track) > 27) ? SubStr(track, 1, 30) "..." : track
 
-;    Global cpplaying := OSDCP.SetCellText( 2, 3, track, "Left", {FontSize: 14, FontWeight: 500}, 1, 2)
-    Global cpplaying := OSDCP.SetCellText(2, 3, displayTrack, "Left", {FontSize: 11, FontWeight: 500}, 1, 2)
+    OSDCP.SetCellImage( 1, 1, App.Icon, "Left", 20, 1, 1)
+    OSDCP.SetCellText( 2, 1, App.Name, "Center",, 99, 1)
+    OSDCP.SetCellText( 1, 2, "Playing: ", "Left", {FontSize: 8, FontWeight: 300}, 1, 2)
+    Global cpplaying := OSDCP.SetCellText(2, 2, displayTrack, "Right", {FontSize: 11, FontWeight: 700}, 1, 2)
+    OSDCP.SetCellText( 2, 3, " ", "Center", {FontSize: 1})
+    OSDCP.SetCellText( 1, 4, "Artist: ", "Left", {FontSize: 8, FontWeight: 300})
+    Global cpartist := OSDCP.SetCellText( 2, 4, artist, "Right", {FontSize: 10, FontWeight: 300}, 1)
+    OSDCP.SetCellText( 1, 5, "Time: ", "Left", {FontSize: 8, FontWeight: 300})
+    Global cpplaytime := OSDCP.SetCellText( 2, 5, time, "Right", {FontSize: 10, FontWeight: 300})
+    Global cpprogress := OSDCP.SetCellProgress( 1, 6, percent, "Center",,,)
+    OSDCP.SetCellText( 2, 7, " ", "Center", {FontSize: 1})
 
-
-    OSDCP.SetCellText( 2, 4, " ", "Center", {FontSize: 1})
-
-    ; row 3, 4, 5
-    OSDCP.SetCellText( 1, 5, "Artist:", "Left", {FontSize: 10, FontWeight: 300})
-    Global cpartist := OSDCP.SetCellText( 2, 5, artist, "Left", {FontSize: 10, FontWeight: 300}, 2)
-
-    OSDCP.SetCellText( 1, 6, "Play time:", "Left", {FontSize: 10, FontWeight: 300})
-    Global cpplaytime := OSDCP.SetCellText( 2, 6, time, "Left", {FontSize: 10, FontWeight: 300})
-    Global cpprogress := OSDCP.SetCellProgress( 1, 7, percent, "Center",,3,3)
-
-    OSDCP.SetCellText( 1, 9, " ", "Center", {FontSize: 10})
-
-    OSDCP.Show(,,7000)
+    OSDCP.Show()
 }
 
 
@@ -203,99 +174,125 @@ OSD_CP(track, artist, time, percent){
 ;@endregion
 
 ;@region Hotkeys
-; --- Song Info Toast ---
 ; --- Add to List ---
-$#F5::Spotify_UWP.AddToList()
+try Hotkey("$" . General.HK_AddToList, (*) => HK_AddToList())
+HK_AddToList(newHotkey := "", isGuiUpdate := false) {
+	if (isGuiUpdate) {
+		global General
+		General.HK_AddToList := newHotkey
+		SaveINI()
+		return
+	}
+	Spotify_UWP.AddToList()
+}
 
-$#F6::OSD_CP( (song := Spotify_UWP.NowPlaying).Name, song.Artist, song.Time " / " song.Length , GetPlayPercentage(song.Time, song.Length))
+; --- Song Info Toast ---
+try Hotkey("$" . General.HK_OSD_CP, (*) => HK_OSD_CP())
+HK_OSD_CP(newHotkey := "", isGuiUpdate := false) {
+	if (isGuiUpdate) {
+		global General
+		General.HK_OSD_CP := newHotkey
+		SaveINI()
+		return
+	}
+	OSD_CP( (song := Spotify_UWP.NowPlaying).Name, song.Artist, song.Time " / " song.Length , GetPlayPercentage(song.Time, song.Length))
+}
 
 ; --- Previous ---
-$#F7::Spotify_UWP.PreviousSong()
+try Hotkey("$" . General.HK_PreviousSong, (*) => HK_PreviousSong())
+HK_PreviousSong(newHotkey := "", isGuiUpdate := false) {
+	if (isGuiUpdate) {
+		global General
+		General.HK_PreviousSong := newHotkey
+		SaveINI()
+		return
+	}
+	Spotify_UWP.PreviousSong()
+}
 
 ; --- Next ---
-$#F8::Spotify_UWP.NextSong()
+try Hotkey("$" . General.HK_NextSong, (*) => HK_NextSong())
+HK_NextSong(newHotkey := "", isGuiUpdate := false) {
+	if (isGuiUpdate) {
+		global General
+		General.HK_NextSong := newHotkey
+		SaveINI()
+		return
+	}
+	Spotify_UWP.NextSong()
+}
 
 ; --- Play / Pause ---
-$#F9::Spotify_UWP.TogglePlay()
+try Hotkey("$" . General.HK_TogglePlay, (*) => HK_TogglePlay())
+HK_TogglePlay(newHotkey := "", isGuiUpdate := false) {
+	if (isGuiUpdate) {
+		global General
+		General.HK_TogglePlay := newHotkey
+		SaveINI()
+		return
+	}
+	Spotify_UWP.TogglePlay()
+}
 
 ; --- Mute ---
-$#F10::Spotify_UWP.ToggleMute()
+try Hotkey("$" . General.HK_ToggleMute, (*) => HK_ToggleMute())
+HK_ToggleMute(newHotkey := "", isGuiUpdate := false) {
+	if (isGuiUpdate) {
+		global General
+		General.HK_ToggleMute := newHotkey
+		SaveINI()
+		return
+	}
+	Spotify_UWP.ToggleMute()
+}
 
 ; --- Volume Down (-10%) ---
-$#F11::Spotify_UWP.Volume -= (100 / 15) ; Spotify defaults minimum step at (100/15)
+try Hotkey("$" . General.HK_VolumeDown, (*) => HK_VolumeDown())
+HK_VolumeDown(newHotkey := "", isGuiUpdate := false) {
+	if (isGuiUpdate) {
+		global General
+		General.HK_VolumeDown := newHotkey
+		SaveINI()
+		return
+	}
+	Spotify_UWP.Volume -= (100 / 15)
+}
 
 ; --- Volume Up (+10%) ---
-$#F12::Spotify_UWP.Volume += (100 / 15) ; Spotify defaults minimum step at (100/15)
+try Hotkey("$" . General.HK_VolumeUp, (*) => HK_VolumeUp())
+HK_VolumeUp(newHotkey := "", isGuiUpdate := false) {
+	if (isGuiUpdate) {
+		global General
+		General.HK_VolumeUp := newHotkey
+		SaveINI()
+		return
+	}
+	Spotify_UWP.Volume += (100 / 15)
+}
 
 ; --- Full Screen ---
-$#f::Spotify_UWP.ToggleFullscreen()
+try Hotkey("$" . General.HK_ToggleFullscreen, (*) => HK_ToggleFullscreen())
+HK_ToggleFullscreen(newHotkey := "", isGuiUpdate := false) {
+	if (isGuiUpdate) {
+		global General
+		General.HK_ToggleFullscreen := newHotkey
+		SaveINI()
+		return
+	}
+	Spotify_UWP.ToggleFullscreen()
+}
 
 ; --- Help GUI ---
-$#h::ShowHelpGUI()
-
-
-#HotIf !A_IsCompiled
-$^p::Reload()
-#HotIf 
-;@endregion
-
-;@region Reload
-ReloadWithArgs(callerName := "", paramValue := "") {
-    argString := ""
-    if (callerName != "") {
-        argString .= ' "' callerName '"'
-        if (paramValue != "") {
-            argString .= ' "' paramValue '"'
-        }
-    }
-
-    if A_IsCompiled {
-        Run('"' A_ScriptFullPath '" /restart' argString)
-    } else {
-        Run('"' A_AhkPath '" /restart "' A_ScriptFullPath '"' argString)
-    }
-    ExitApp()
+try Hotkey("$" . General.HK_ShowHelpGUI, (*) => ShowGUI())
+ShowGUI(newHotkey := "", isGuiUpdate := false) {
+	if (isGuiUpdate) {
+		global General
+		General.HK_ShowHelpGUI := newHotkey
+		SaveINI()
+		return
+	}
+	ShowMainGUI()
 }
-
-; CHECK RELOAD ARGUMENTS
-if (A_Args.Length > 0)  && !RegExMatch(A_Args[1], "i)^--signal-update-success=") {
-    targetFuncName := A_Args[1]
-    if !A_IsCompiled && Debug
-        ToolTip("reload with args " A_Args[1])
-    if (Settings.UseOSD) {
-        if (targetFuncName == "Volume") {
-            OSD_Volume("", targetFuncName)
-        } else {
-            OSD_General(imageConnect, targetFuncName)
-        }
-    }
-
-    Sleep(500)
-    Spotify_UWP.GetDocumentElement(true, ,"root")
-    Sleep(1000)
-    Spotify_UWP.GetPlayerControls()
-    Sleep(2000)
-    Spotify_UWP.GetNowPlayingBar()
-
-
-    try {
-        ; Check if the argument actually matches a valid method name in the class
-        if (targetFuncName != "" && HasMethod(Spotify_UWP, targetFuncName)) {
-            if (A_Args.Length >= 2) {
-                Spotify_UWP.%targetFuncName%(A_Args[2])
-            } else {
-                Spotify_UWP.%targetFuncName%()
-            }
-        }
-    } catch Any as err {
-        MsgBoxCustom("Failed to execute dynamic call: " err.Message, App.Name)
-    }
-}
-;@endregion
-
-;@endregion
-
-
 
 GetPlayPercentage(timeStr, lengthStr) {
     currentSec := 0
@@ -318,4 +315,12 @@ GetPlayPercentage(timeStr, lengthStr) {
 }
 
 
-#Include <TrayController>
+#HotIf !A_IsCompiled
+^p::ReloadClean()
+#HotIf 
+;@endregion
+
+;@region Reload
+CheckReloadArgs()
+;@endregion
+;@endregion

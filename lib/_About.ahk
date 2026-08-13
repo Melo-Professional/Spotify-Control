@@ -1,8 +1,8 @@
 /************************************************************************
  * @description About GUI
  * @author Melo (melo@meloprofessional.com)
- * @date 2026/07/20
- * @version 1.7.7 (Icon distance)
+ * @date 2026/08/12
+ * @version 1.7.8
  ***********************************************************************/
 
 #Requires AutoHotkey v2.0
@@ -110,8 +110,10 @@ ShowAboutGUI() {
         if IsFunctionDefined("FrostedTheme")
             %"FrostedTheme"%.Apply(MyGui)
     } else {
-        ApplyThemeToGui(MyGui)
-        WatchedGUIs.Push(MyGui)
+        if IsFunctionDefined("ApplyThemeToGui") {
+    	    %"ApplyThemeToGui"%(MyGui)
+        	%"WatchedGUIs"%.Push(MyGui)
+	    }
     }
 
     MyGui.Show()

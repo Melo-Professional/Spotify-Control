@@ -322,13 +322,13 @@ Class TrayControllerClass {
 
         this.mouseX := currentX
         this.mouseY := currentY
-        
 
-
+		if IsFunctionDefined("FrostedTheme") && IsFunctionDefined("ApplyThemeToGui") {
             %"ApplyThemeToGui"%(this.guiObj, "Dark")
             %"FrostedTheme"%.Apply(this.guiObj)
-
-
+        } else if IsFunctionDefined("ApplyThemeToGui") {
+			%"ApplyThemeToGui"%(this.guiObj)
+		}
 
         this.guiObj.Show("X" . (this.mouseX - 72) . " Y" . (this.mouseY - 130) . " NoActivate")
         this.isGuiVisible := true 
@@ -338,6 +338,11 @@ Class TrayControllerClass {
         
         this.leaveCount := 0 
         SetTimer(() => this.HideGuiWhenMouseLeaves(), 400)
+
+		IsFunctionDefined(FunctionName) {
+        	try return HasMethod(%FunctionName%)
+        	return false
+    	}
     }
 
     HideGuiWhenMouseLeaves() {

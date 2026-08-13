@@ -50,7 +50,7 @@ Menu_Custom() {
 
     Item := "Show OSD"
     TrayMenu.Insert("More", Item, HandlerShowOSD)
-    TrayMenu.Insert("More", "Hotkeys`tWin + H", (*) => ShowHelpGUI())
+    TrayMenu.Insert("More", "Hotkeys...", (*) => ShowMainGUI())
     TrayMenu.Insert("More", "")
 
     if (Settings.UseOSD){

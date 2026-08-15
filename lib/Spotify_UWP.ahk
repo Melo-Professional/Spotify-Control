@@ -273,15 +273,23 @@ class Spotify_UWP {
 
         loop 5 {
             try {
-                this.btnFullScreen.Toggle()
+                ;this.btnFullScreen.Toggle()
+                ;this.btnFullScreen.Invoke()
+                this.btnFullScreen.Click()
                 break
             } catch {
                 try {
-                    this.btnFullScreen := this.GetNowPlayingBar(A_Index == 2, "ToggleFullscreen").FindElement([{ Name: LanguagePack[General.CurrentLang]["Enter Full screen"], Type: "Button" }, { Name: LanguagePack[General.CurrentLang]["Exit full screen"], Type: "Button" }])
+                    ;this.btnFullScreen := this.GetNowPlayingBar(A_Index == 2, "ToggleFullscreen").FindElement([{ Name: LanguagePack[General.CurrentLang]["Enter Full screen"], Type: "Button" }, { Name: LanguagePack[General.CurrentLang]["Exit full screen"], Type: "Button" }])
+                    this.btnFullScreen := this.GetNowPlayingBar(A_Index == 2, "ToggleFullscreen").FindElement([{ Name: LanguagePack[General.CurrentLang]["Enter Full screen"], LocalizedType:"toggle button" }, { Name: LanguagePack[General.CurrentLang]["Exit full screen"], LocalizedType:"toggle button" }])
                 } catch {
-                    if (A_Index >= 4){
-                    try this.btnFullScreen := this.GetDocumentElement(A_Index == 4, "ToggleFullscreen").FindElement([{ Name: LanguagePack[General.CurrentLang]["Enter Full screen"], Type: "Button" }, { Name: LanguagePack[General.CurrentLang]["Exit full screen"], Type: "Button" }])
-                    }
+                    if (A_Index >= 4) {
+						try {
+                    		;this.btnFullScreen := this.GetDocumentElement(A_Index == 4, "ToggleFullscreen").FindElement([{ Name: LanguagePack[General.CurrentLang]["Enter Full screen"], Type: "Button" }, { Name: LanguagePack[General.CurrentLang]["Exit full screen"], Type: "Button" }])
+                    		this.btnFullScreen := this.GetDocumentElement(A_Index == 4, "ToggleFullscreen").FindElement([{ Name: LanguagePack[General.CurrentLang]["Enter Full screen"], LocalizedType:"toggle button" }, { Name: LanguagePack[General.CurrentLang]["Exit full screen"], LocalizedType:"toggle button" }])
+						} catch {
+							; Do nothing
+						}
+					}
                 }
             }
             if (A_Index == 2 || A_Index == 4)

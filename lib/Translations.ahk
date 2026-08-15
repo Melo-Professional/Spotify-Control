@@ -10,7 +10,7 @@ LanguagePack := Map(
                     "Pause", "Pause",
                     "Next", "Next",
                     "Previous", "Previous",
-                    "Enter Full screen", "Enter Full screen",
+                    "Enter Full screen", "Enter full screen",
                     "Exit full screen", "Exit full screen",
                     "Mute", "Mute",
                     "Unmute", "Unmute",

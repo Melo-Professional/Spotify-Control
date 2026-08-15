@@ -51,7 +51,7 @@ class Spotify_UWP {
             targetHwnd := this._GetCorrectHwnd()
 
             try{
-                timeout := A_TickCount + 5000
+                timeout := A_TickCount + 10000
                 while (A_TickCount < timeout && !(this._cache["Doc"] := UIA.ElementFromHandle(targetHwnd).FindElement({ AutomationId: "RootWebArea" }))){
                     Sleep -1
                 }
@@ -548,7 +548,7 @@ class Spotify_UWP {
         ;TrayTip(message, "Spotify info", "Mute " 36)
     }
 
-    static OpenSpotify() {
+/*     static OpenSpotify() {
         ;DebugFunc()
         oldSetting := DetectHiddenWindows(false)
         oldMatchMode := SetTitleMatchMode("RegEx")
@@ -579,6 +579,55 @@ class Spotify_UWP {
         DetectHiddenWindows(oldSetting)
         SetTitleMatchMode(oldMatchMode)
     }
+ */
+
+	static OpenSpotify() {
+		oldSetting := DetectHiddenWindows(false)
+		oldMatchMode := SetTitleMatchMode("RegEx")
+		targetWindow := "ahk_class ^Chrome_WidgetWin_[01]$ " . this.winExe
+
+		try {
+			; 1. Get a list of all matching window IDs currently open
+			existingHwnds := Map()
+			for hwnd in WinGetList(targetWindow) {
+				existingHwnds[hwnd] := true
+			}
+
+			; 2. Launch the new instance
+			if (General.CurrentPlayerExe == "spotify.exe") {
+				Run("spotify")
+			} else {
+				Run(General.CurrentPlayerExe . ' --new-window "https://open.spotify.com"')
+			}
+
+			; 3. Poll briefly for a NEW HWND that wasn't in the original list
+			newHwnd := 0
+			startTime := A_TickCount
+			while (A_TickCount - startTime < 3000) { ; 3-second timeout
+				for hwnd in WinGetList(targetWindow) {
+					if !existingHwnds.Has(hwnd) {
+						newHwnd := hwnd
+						break 2
+					}
+				}
+				Sleep(50)
+			}
+
+			; 4. Focus the newly created window specifically
+			if (newHwnd) {
+				WinShow(newHwnd)
+				WinRestore(newHwnd)
+				WinActivate(newHwnd)
+				WinWaitActive(newHwnd, , 2)
+			}
+		} catch {
+			MsgBoxCustom("Could not start Spotify.", App.Name)
+		}
+
+		DetectHiddenWindows(oldSetting)
+		SetTitleMatchMode(oldMatchMode)
+	}
+
 
     static _GetCorrectHwnd() {
         oldSetting := DetectHiddenWindows(false)

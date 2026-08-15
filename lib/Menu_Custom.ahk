@@ -9,6 +9,7 @@
 
 Menu_Custom() {
 
+	A_IconTip := ""
     TrayMenu := A_TrayMenu
 
     ; SC Reload fix
@@ -83,50 +84,7 @@ Menu_Custom() {
     }
 
 
-    A_TrayMenu.Default := "" 
-
-    ; Listen for tray icon notifications
-    OnMessage(0x404, TrayIconHandler)
-
-    TrayIconHandler(wParam, lParam, msg, hwnd) {
-        static clickCounter := 0
-
-    ; 0x201 = WM_LBUTTONDOWN
-    if (lParam = 0x201) {
-        clickCounter++
-        if (clickCounter = 1) {
-            ; Wait 250ms to see if a second click arrives
-            SetTimer(HandleClicks, -250)
-        }
-        return 1
-    }
-    
-    ; 0x203 = WM_LBUTTONDBLCLK (Windows explicitly tells us it's a double click)
-    else if (lParam = 0x203) {
-        clickCounter := 2
-        return 1
-    }
-
-    ; Inner function to process the action after the 250ms timeout
-    HandleClicks() {
-        if (clickCounter = 1) {
-            ; --- 1 CLICK ---
-            Spotify_UWP.TogglePlay()
-;        CoordMode("Mouse", "Screen")
-;        MouseGetPos(&mouseX, &mouseY)
-;        TrayControllerGUI.Show("X" . (mouseX - 57) . " Y" . (mouseY - 150) . " NoActivate")
-;        global LeaveCount := 0 
-;        SetTimer(HideGuiWhenMouseLeaves, 400)
-
-        } else if (clickCounter >= 2) {
-            ; --- 2 CLICKS ---
-            Spotify_UWP.ToggleFullscreen()
-        }
-        clickCounter := 0 ; Reset counter
-    }
-    
-    ; Any other event (like 0x205 for Right-Click) passes through to show the menu normally!
-}
+    A_TrayMenu.Default := ""
 
     IsFunctionDefined(Name) {
         try return HasMethod(%Name%)

@@ -3,14 +3,14 @@
 /************************************************************************
  * @description A snippet to control Spotify.
  * @author Melo (melo@meloprofessional.com)
- * @date 2026/08/13
+ * @date 2026/08/15
  * @releasedate 2026/09/19
- * @version 2.7.0.0
+ * @version 2.7.2.103
  ***********************************************************************/
 
 AppName := "Spotify Control"
 ;@Ahk2Exe-Let U_AppName = %A_PriorLine%
-AppVersion := "2.7.0.0"
+AppVersion := "2.7.2.103"
 ;@Ahk2Exe-Let U_Version = %A_PriorLine%
 AppDescription := "A snippet to control Spotify."
 ;@endregion
@@ -42,10 +42,11 @@ A_HotkeyInterval := 1000
 #Include *i <_Config&Vars>
 #Include *i <_SaveSettings>
 ;#Include *i <_MessageManager>
-;#Include *i <_TrayIconHandler>
+#Include *i <_TrayIconHandler>
 #Include *i <_Theme>
 #Include *i <_FrostedTheme>
 #Include *i <_TitleBar>
+#Include *i <_GuiTracker>
 ;#Include *i <_ModernSlider>
 ;#Include *i <_Color_Picker_Dialog>
 #Include *i <_HotkeysRecorder>
@@ -175,8 +176,8 @@ OSD_CP(track, artist, time, percent){
 
 ;@region Hotkeys
 ; --- Add to List ---
-try Hotkey("$" . General.HK_AddToList, (*) => HK_AddToList())
-HK_AddToList(newHotkey := "", isGuiUpdate := false) {
+try Hotkey("$" . General.HK_AddToList, (*) => AddToList())
+AddToList(newHotkey := "", isGuiUpdate := false) {
 	if (isGuiUpdate) {
 		global General
 		General.HK_AddToList := newHotkey
@@ -199,8 +200,8 @@ HK_OSD_CP(newHotkey := "", isGuiUpdate := false) {
 }
 
 ; --- Previous ---
-try Hotkey("$" . General.HK_PreviousSong, (*) => HK_PreviousSong())
-HK_PreviousSong(newHotkey := "", isGuiUpdate := false) {
+try Hotkey("$" . General.HK_PreviousSong, (*) => PreviousSong())
+PreviousSong(newHotkey := "", isGuiUpdate := false) {
 	if (isGuiUpdate) {
 		global General
 		General.HK_PreviousSong := newHotkey
@@ -211,8 +212,8 @@ HK_PreviousSong(newHotkey := "", isGuiUpdate := false) {
 }
 
 ; --- Next ---
-try Hotkey("$" . General.HK_NextSong, (*) => HK_NextSong())
-HK_NextSong(newHotkey := "", isGuiUpdate := false) {
+try Hotkey("$" . General.HK_NextSong, (*) => NextSong())
+NextSong(newHotkey := "", isGuiUpdate := false) {
 	if (isGuiUpdate) {
 		global General
 		General.HK_NextSong := newHotkey
@@ -223,8 +224,8 @@ HK_NextSong(newHotkey := "", isGuiUpdate := false) {
 }
 
 ; --- Play / Pause ---
-try Hotkey("$" . General.HK_TogglePlay, (*) => HK_TogglePlay())
-HK_TogglePlay(newHotkey := "", isGuiUpdate := false) {
+try Hotkey("$" . General.HK_TogglePlay, (*) => TogglePlay())
+TogglePlay(newHotkey := "", isGuiUpdate := false) {
 	if (isGuiUpdate) {
 		global General
 		General.HK_TogglePlay := newHotkey
@@ -235,8 +236,8 @@ HK_TogglePlay(newHotkey := "", isGuiUpdate := false) {
 }
 
 ; --- Mute ---
-try Hotkey("$" . General.HK_ToggleMute, (*) => HK_ToggleMute())
-HK_ToggleMute(newHotkey := "", isGuiUpdate := false) {
+try Hotkey("$" . General.HK_ToggleMute, (*) => ToggleMute())
+ToggleMute(newHotkey := "", isGuiUpdate := false) {
 	if (isGuiUpdate) {
 		global General
 		General.HK_ToggleMute := newHotkey
@@ -247,8 +248,8 @@ HK_ToggleMute(newHotkey := "", isGuiUpdate := false) {
 }
 
 ; --- Volume Down (-10%) ---
-try Hotkey("$" . General.HK_VolumeDown, (*) => HK_VolumeDown())
-HK_VolumeDown(newHotkey := "", isGuiUpdate := false) {
+try Hotkey("$" . General.HK_VolumeDown, (*) => VolumeDown())
+VolumeDown(newHotkey := "", isGuiUpdate := false) {
 	if (isGuiUpdate) {
 		global General
 		General.HK_VolumeDown := newHotkey
@@ -259,8 +260,8 @@ HK_VolumeDown(newHotkey := "", isGuiUpdate := false) {
 }
 
 ; --- Volume Up (+10%) ---
-try Hotkey("$" . General.HK_VolumeUp, (*) => HK_VolumeUp())
-HK_VolumeUp(newHotkey := "", isGuiUpdate := false) {
+try Hotkey("$" . General.HK_VolumeUp, (*) => VolumeUp())
+VolumeUp(newHotkey := "", isGuiUpdate := false) {
 	if (isGuiUpdate) {
 		global General
 		General.HK_VolumeUp := newHotkey
@@ -271,8 +272,8 @@ HK_VolumeUp(newHotkey := "", isGuiUpdate := false) {
 }
 
 ; --- Full Screen ---
-try Hotkey("$" . General.HK_ToggleFullscreen, (*) => HK_ToggleFullscreen())
-HK_ToggleFullscreen(newHotkey := "", isGuiUpdate := false) {
+try Hotkey("$" . General.HK_ToggleFullscreen, (*) => ToggleFullscreen())
+ToggleFullscreen(newHotkey := "", isGuiUpdate := false) {
 	if (isGuiUpdate) {
 		global General
 		General.HK_ToggleFullscreen := newHotkey

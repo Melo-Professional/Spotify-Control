@@ -1,375 +1,272 @@
-#Requires AutoHotkey v2.0
-#SingleInstance Force
+InitTrayController()
 
-try {
-    global MyTrayController := TrayControllerClass()
+InitTrayController() {
+    ; Static state map encapsulates configuration and state locally
+    static State := Map(
+        "Gui", 0, "Tracker", 0, "TrayHandler", 0,
+        "BaseSize", 30, "HoverSize", 36, "ShrinkSize", 28,
+        "AnimDuration", 80, "FrameRate", 10,
+        "ActiveHoverCtrl", 0, "OrigCoords", Map(), "CurrentSizes", Map(), "ClickableCtrls", []
+    )
+
     A_IconTip := ""
+
+    ; 1. Build GUI Container
+    TrayGui := Gui("+AlwaysOnTop -Caption -SysMenu +ToolWindow +Owner")
+    TrayGui.MarginX := 20
+    TrayGui.MarginY := 20
+    State["Gui"] := TrayGui
+
+    fontSize := IsSet(Settings) && HasProp(Settings, "GuiFontSizeMedium") ? Settings.GuiFontSizeMedium : 10
+    fontName := IsSet(Settings) && HasProp(Settings, "GuiFontName") ? Settings.GuiFontName : "Segoe UI"
+    TrayGui.SetFont("s" . fontSize, fontName)
+
+    ; 2. Add Controls
+    pAdd    := TrayGui.AddPicture("w30 h-1 xm ym", imageAdd ?? "")
+    pMute   := TrayGui.AddPicture("w30 h-1 x+10 ym", imageUnmute ?? "")
+    pUnmute := TrayGui.AddPicture("w30 h-1 xp yp Hidden", imageUnmute ?? "")
+    pFull   := TrayGui.AddPicture("w30 h-1 x+10 ym", imageFullscreen ?? "")
+
+    pPrev   := TrayGui.AddPicture("w30 h-1 xm y+10", imagePrevious ?? "")
+    pPlay   := TrayGui.AddPicture("w30 h-1 x+10 yp", imagePlay ?? "")
+    pPause  := TrayGui.AddPicture("w30 h-1 xp yp Hidden", imagePlay ?? "")
+    pNext   := TrayGui.AddPicture("w30 h-1 x+10 yp", imageNext ?? "")
+
+    State["ClickableCtrls"] := [pAdd, pMute, pUnmute, pFull, pPrev, pPlay, pPause, pNext]
+
+    ; 3. Map Default Geometries
+    for ctrl in State["ClickableCtrls"] {
+        ctrl.GetPos(&cX, &cY)
+        State["OrigCoords"][ctrl.Hwnd] := {X: cX, Y: cY}
+        State["CurrentSizes"][ctrl.Hwnd] := State["BaseSize"]
+    }
+
+    ; 4. Setup GuiTracker
+    Tracker := GuiTracker()
+    State["Tracker"] := Tracker
+
+    ; Hides GUI 300ms after mouse leaves GUI bounds
+    Tracker.SetAutoDismiss("Hide", 300)
+
+    Tracker.RegisterGui(Map(
+        "OnWheelUp",   (*) => ModifySpotifyVolume(100 / 15),
+        "OnWheelDown", (*) => ModifySpotifyVolume(-(100 / 15)),
+        "OnLeave",     (*) => ResetHoveredControl(State)
+    ))
+
+    ; Register Control Actions & Wheel Binds
+    RegisterControlEvents(Tracker, State, pAdd,  () => Spotify_UWP.AddToList())
+    RegisterControlEvents(Tracker, State, pFull, () => Spotify_UWP.ToggleFullscreen())
+    RegisterControlEvents(Tracker, State, pPrev, () => Spotify_UWP.PreviousSong())
+    RegisterControlEvents(Tracker, State, pNext, () => Spotify_UWP.NextSong())
+
+    RegisterToggleEvents(Tracker, State, pPlay, pPause, () => Spotify_UWP.TogglePlay())
+    RegisterToggleEvents(Tracker, State, pPause, pPlay, () => Spotify_UWP.TogglePlay())
+    RegisterToggleEvents(Tracker, State, pMute, pUnmute, () => Spotify_UWP.ToggleMute())
+    RegisterToggleEvents(Tracker, State, pUnmute, pMute, () => Spotify_UWP.ToggleMute())
+
+    Tracker.AddGui := TrayGui
+
+    ; 5. Instantiate TrayIconHandler
+    TrayHandler := TrayIconHandler()
+	TrayHandler.HoverDelay := 400
+    State["TrayHandler"] := TrayHandler
+
+	TrayHandler.OnRightClick	:= (*) => A_TrayMenu.Show()
+	TrayHandler.OnLeftClick		:= (*) => Spotify_UWP.TogglePlay()
+	TrayHandler.OnDoubleClick	:= (*) => Spotify_UWP.ToggleFullscreen()
+    TrayHandler.OnHover			:= (t) => ShowTrayGui(State, t)
+    TrayHandler.OnLeave			:= (t) => OnTrayIconLeave(State, t)
+    TrayHandler.OnWheelUp		:= (*) => ModifySpotifyVolume(100 / 15)
+    TrayHandler.OnWheelDown		:= (*) => ModifySpotifyVolume(-(100 / 15))
+
+    ; System Event Handlers
+    TrayGui.OnEvent("Close", (*) => CleanDestroyTC(State))
+    TrayGui.OnEvent("Escape", (*) => CleanDestroyTC(State))
+
+    if HasMethod(IsSet(ApplyThemeToGui) ? ApplyThemeToGui : 0) {
+        ApplyThemeToGui(TrayGui)
+        if IsSet(WatchedGUIs) && HasMethod(WatchedGUIs.Push)
+            WatchedGUIs.Push(TrayGui)
+    }
 }
 
-Class TrayControllerClass {
-    ; --- Internal Properties ---
-    guiObj := 0
-    hwnd := 0
-    leaveCount := 0
-    mouseX := 0
-    mouseY := 0
-    activeHoverCtrl := 0
-    isGuiVisible := false
-    isTimerActive := false
-    
-    ; Animation & Layout
-    baseSize := 30
-    hoverSize := 36 
-    shrinkSize := 28
-    animationDuration := 80  
-    frameRate := 10          
-    
-    ; State Tracking Objects
-    hoverTimerObj := 0
-    startX := 0
-    startY := 0
-    
-    hCursorHand := 0
-    origCoords := Map()
-    currentSizes := Map()
-    clickableCtrls := []
+; --- SHOW / HIDE LOGIC ---
 
-    __New() {
-        ; 1. Load Windows Resources
-        this.hCursorHand := DllCall("LoadCursor", "Ptr", 0, "Ptr", 32649, "Ptr")
+ShowTrayGui(State, trayObj) {
+    if WinExist(State["Gui"].Hwnd) && DllCall("IsWindowVisible", "Ptr", State["Gui"].Hwnd)
+        return
 
-        ; Create standard bound object for v2.0 safe debouncing
-        this.hoverTimerObj := this.CheckIfStillHovered.Bind(this)
-
-        ; 2. Build the GUI container
-        this.guiObj := Gui("+AlwaysOnTop -Caption -SysMenu +ToolWindow +Owner")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        this.guiObj.MarginX := 20
-        this.guiObj.MarginY := 20
-        
-        fontSize := IsSet(Settings) && HasProp(Settings, "GuiFontSizeMedium") ? Settings.GuiFontSizeMedium : 10
-        fontName := IsSet(Settings) && HasProp(Settings, "GuiFontName") ? Settings.GuiFontName : "Segoe UI"
-        this.guiObj.SetFont("s" fontSize, fontName)
-        this.hwnd := this.guiObj.Hwnd
-
-        ; 3. Add UI Elements (Assuming variables imageAdd, etc. exist in scope or are passed)
-        pAdd       := this.guiObj.AddPicture("w30 h-1 xm ym", imageAdd ?? "")
-        pMute      := this.guiObj.AddPicture("w30 h-1 x+10 ym", imageUnmute ?? "")
-        pUnmute    := this.guiObj.AddPicture("w30 h-1 xp yp Hidden", imageUnmute ?? "")
-        pFull      := this.guiObj.AddPicture("w30 h-1 x+10 ym", imageFullscreen ?? "")
-
-        pPrev      := this.guiObj.AddPicture("w30 h-1 xm y+10", imagePrevious ?? "")
-        pPlay      := this.guiObj.AddPicture("w30 h-1 x+10 yp", imagePlay ?? "")
-        pPause     := this.guiObj.AddPicture("w30 h-1 xp yp Hidden", imagePlay ?? "")
-        pNext      := this.guiObj.AddPicture("w30 h-1 x+10 yp", imageNext ?? "")
-
-        this.clickableCtrls := [pAdd, pMute, pUnmute, pFull, pPrev, pPlay, pPause, pNext]
-
-        ; Map default geometries
-        for ctrl in this.clickableCtrls {
-            ctrl.GetPos(&cX, &cY)
-            this.origCoords[ctrl.Hwnd] := {X: cX, Y: cY}
-            this.currentSizes[ctrl.Hwnd] := this.baseSize
-        }
-
-        ; 4. Bind Interactions
-        pAdd.OnEvent("Click",  (ctrl, *) => this.OnImageClick(ctrl, () => Spotify_UWP.AddToList()))
-        pFull.OnEvent("Click", (ctrl, *) => this.OnImageClick(ctrl, () => Spotify_UWP.ToggleFullscreen()))
-        pPrev.OnEvent("Click", (ctrl, *) => this.OnImageClick(ctrl, () => Spotify_UWP.PreviousSong()))
-        pNext.OnEvent("Click", (ctrl, *) => this.OnImageClick(ctrl, () => Spotify_UWP.NextSong()))
-
-        pPlay.OnEvent("Click",  (ctrl, *) => this.OnToggleClick(pPlay, pPause, () => Spotify_UWP.TogglePlay()))
-        pPause.OnEvent("Click", (ctrl, *) => this.OnToggleClick(pPause, pPlay, () => Spotify_UWP.TogglePlay()))
-        pMute.OnEvent("Click",  (ctrl, *) => this.OnToggleClick(pMute, pUnmute, () => Spotify_UWP.ToggleMute()))
-        pUnmute.OnEvent("Click",(ctrl, *) => this.OnToggleClick(pUnmute, pMute, () => Spotify_UWP.ToggleMute()))
-
-        this.guiObj.OnEvent("Close", (gui) => this.CleanDestroyTC())
-        this.guiObj.OnEvent("Escape", (gui) => this.CleanDestroyTC())
-
-        if HasMethod(IsSet(ApplyThemeToGui) ? ApplyThemeToGui : 0) {
-            ApplyThemeToGui(this.guiObj)
-            if IsSet(WatchedGUIs) && HasMethod(WatchedGUIs.Push)
-                WatchedGUIs.Push(this.guiObj)
-        }
-
-        ; 5. Route Windows Hook Messages to Class Instances
-        OnMessage(0x0200, (w, l, m, h) => this.WM_MOUSEMOVE(w, l, m, h))
-        OnMessage(0x0020, (w, l, m, h) => this.WM_SETCURSOR(w, l, m, h))
-        OnMessage(0x404,  (w, l, m, h) => this.OnTrayMessage(w, l, m, h))
-        OnMessage(0x020A, (w, l, m, h) => this.OnGuiMouseWheel(w, l, m, h))
-        OnMessage(0x0006, (w, l, m, h) => this.WM_ACTIVATE(w, l, m, h))
+    if IsFunctionDefined("FrostedTheme") && IsFunctionDefined("ApplyThemeToGui") {
+        %"ApplyThemeToGui"%(State["Gui"], "Dark")
+        %"FrostedTheme"%.Apply(State["Gui"])
+    } else if IsFunctionDefined("ApplyThemeToGui") {
+        %"ApplyThemeToGui"%(State["Gui"])
     }
 
-    CleanDestroyTC() {
-        if HasMethod(IsSet(RemoveGuiFromArray) ? RemoveGuiFromArray : 0)
-            RemoveGuiFromArray(this.guiObj)
-        this.ResetHoveredCtrl()
-        this.guiObj.Hide()
+    ; Re-bind GUI and reset internal Tracker state prior to display
+    ResetHoveredControl(State)
+    Tracker := State["Tracker"]
+    Tracker.hoveredCtrlHwnd := 0
+    Tracker.isMouseOverGui := false
+    Tracker.leaveStartTime := 0
+    Tracker.AddGui := State["Gui"]
+
+    State["Gui"].Show("X" . (trayObj.TrayMouseX - 72) . " Y" . (trayObj.TrayMouseY - 130) . " NoActivate")
+
+    DllCall("SetWindowPos", "Ptr", State["Gui"].Hwnd, "Ptr", -1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0043)
+    DllCall("dwmapi\DwmSetWindowAttribute", "Ptr", State["Gui"].Hwnd, "UInt", 33, "Int*", 2, "UInt", 4)
+}
+
+OnTrayIconLeave(State, trayObj) {
+    ; Mouse left the tray icon. If it didn't enter the GUI, hide after a short delay
+    SetTimer(() => EvaluateMousePresence(State), -150)
+}
+
+EvaluateMousePresence(State) {
+    TrayGui := State["Gui"]
+    TrayHandler := State["TrayHandler"]
+
+    if (!WinExist(TrayGui.Hwnd) || !DllCall("IsWindowVisible", "Ptr", TrayGui.Hwnd))
+        return
+
+    ; Check if mouse is inside the GUI window boundaries
+    CoordMode("Mouse", "Screen")
+    MouseGetPos(&mX, &mY, &hoverWin)
+
+    isOverGui := (hoverWin == TrayGui.Hwnd)
+    isOverIcon := TrayHandler.IsHovering
+
+    ; Hide if mouse is neither over the tray icon nor inside the GUI
+    if (!isOverGui && !isOverIcon) {
+        ResetHoveredControl(State)
+        TrayGui.Hide()
     }
+}
 
-    ; --- ANIMATION HANDLING ---
-    AnimateControl(ctrlObj, targetSize) {
-        if !this.origCoords.Has(ctrlObj.Hwnd)
-            return
-        
-        orig := this.origCoords[ctrlObj.Hwnd]
-        startSize := this.currentSizes[ctrlObj.Hwnd]
-        if (startSize == targetSize)
-            return
+; --- TRACKER REGISTRATION HELPERS ---
 
-        startTime := A_TickCount
-        if ctrlObj.HasProp("AnimTimer")
+RegisterControlEvents(Tracker, State, ctrlObj, actionFunc) {
+    Tracker.RegisterControl(ctrlObj, Map(
+        "OnEnter",     (c) => SetControlHovered(State, c),
+        "OnLeave",     (c) => SetControlUnhovered(State, c),
+        "OnLClick",    (c) => OnImageClick(State, c, actionFunc),
+        "OnWheelUp",   (*) => ModifySpotifyVolume(100 / 15),
+        "OnWheelDown", (*) => ModifySpotifyVolume(-(100 / 15))
+    ))
+}
+
+RegisterToggleEvents(Tracker, State, clickedCtrl, targetCtrl, actionFunc) {
+    Tracker.RegisterControl(clickedCtrl, Map(
+        "OnEnter",     (c) => SetControlHovered(State, c),
+        "OnLeave",     (c) => SetControlUnhovered(State, c),
+        "OnLClick",    (c) => OnToggleClick(State, clickedCtrl, targetCtrl, actionFunc),
+        "OnWheelUp",   (*) => ModifySpotifyVolume(100 / 15),
+        "OnWheelDown", (*) => ModifySpotifyVolume(-(100 / 15))
+    ))
+}
+
+; --- ANIMATION LOGIC ---
+
+AnimateControl(State, ctrlObj, targetSize) {
+    if !State["OrigCoords"].Has(ctrlObj.Hwnd)
+        return
+
+    orig := State["OrigCoords"][ctrlObj.Hwnd]
+    startSize := State["CurrentSizes"][ctrlObj.Hwnd]
+    if (startSize == targetSize)
+        return
+
+    startTime := A_TickCount
+    if ctrlObj.HasProp("AnimTimer")
+        SetTimer(ctrlObj.AnimTimer, 0)
+
+    AnimLoop() {
+        elapsed := A_TickCount - startTime
+        if (elapsed >= State["AnimDuration"]) {
             SetTimer(ctrlObj.AnimTimer, 0)
-
-        AnimLoop() {
-            elapsed := A_TickCount - startTime
-            if (elapsed >= this.animationDuration) {
-                SetTimer(ctrlObj.AnimTimer, 0)
-                this.currentSizes[ctrlObj.Hwnd] := targetSize
-                offset := (this.baseSize - targetSize) // 2
-                ctrlObj.Move(orig.X + offset, orig.Y + offset, targetSize, targetSize)
-            } else {
-                progress := elapsed / this.animationDuration
-                currentSize := Round(startSize + (targetSize - startSize) * progress)
-                this.currentSizes[ctrlObj.Hwnd] := currentSize
-                offset := (this.baseSize - currentSize) // 2
-                ctrlObj.Move(orig.X + offset, orig.Y + offset, currentSize, currentSize)
-            }
-            DllCall("RedrawWindow", "Ptr", this.hwnd, "Ptr", 0, "Ptr", 0, "UInt", 0x0105)
+            State["CurrentSizes"][ctrlObj.Hwnd] := targetSize
+            offset := (State["BaseSize"] - targetSize) // 2
+            ctrlObj.Move(orig.X + offset, orig.Y + offset, targetSize, targetSize)
+        } else {
+            progress := elapsed / State["AnimDuration"]
+            currentSize := Round(startSize + (targetSize - startSize) * progress)
+            State["CurrentSizes"][ctrlObj.Hwnd] := currentSize
+            offset := (State["BaseSize"] - currentSize) // 2
+            ctrlObj.Move(orig.X + offset, orig.Y + offset, currentSize, currentSize)
         }
-
-        ctrlObj.AnimTimer := AnimLoop
-        SetTimer(ctrlObj.AnimTimer, this.frameRate)
+        DllCall("RedrawWindow", "Ptr", State["Gui"].Hwnd, "Ptr", 0, "Ptr", 0, "UInt", 0x0105)
     }
 
-    OnImageClick(ctrlObj, actionFunc) {
-        this.AnimateControl(ctrlObj, this.shrinkSize)
-        actionFunc()
-        SetTimer(() => (
-            this.activeHoverCtrl == ctrlObj.Hwnd ? this.AnimateControl(ctrlObj, this.hoverSize) : this.AnimateControl(ctrlObj, this.baseSize)
-        ), -100)
-    }
+    ctrlObj.AnimTimer := AnimLoop
+    SetTimer(ctrlObj.AnimTimer, State["FrameRate"])
+}
 
-    OnToggleClick(clickedCtrl, targetCtrl, actionFunc) {
-        this.AnimateControl(clickedCtrl, this.shrinkSize)
-        actionFunc()
-        SetTimer(() => this.ToggleSwap(clickedCtrl, targetCtrl), -100)
-    }
+SetControlHovered(State, ctrlObj) {
+    State["ActiveHoverCtrl"] := ctrlObj.Hwnd
+    AnimateControl(State, ctrlObj, State["HoverSize"])
+}
 
-    ToggleSwap(clickedCtrl, targetCtrl) {
-        orig := this.origCoords[clickedCtrl.Hwnd]
-        clickedCtrl.Visible := false
-        
-        this.currentSizes[clickedCtrl.Hwnd] := this.baseSize
-        this.currentSizes[targetCtrl.Hwnd] := this.baseSize
-        
-        clickedCtrl.Move(orig.X, orig.Y, this.baseSize, this.baseSize) 
-        targetCtrl.Move(orig.X, orig.Y, this.baseSize, this.baseSize)
-        targetCtrl.Visible := true
-        
-        DllCall("RedrawWindow", "Ptr", this.hwnd, "Ptr", 0, "Ptr", 0, "UInt", 0x0105)
-        
-        this.activeHoverCtrl := targetCtrl.Hwnd
-        this.AnimateControl(targetCtrl, this.hoverSize)
-    }
+SetControlUnhovered(State, ctrlObj) {
+    if (State["ActiveHoverCtrl"] == ctrlObj.Hwnd)
+        State["ActiveHoverCtrl"] := 0
+    AnimateControl(State, ctrlObj, State["BaseSize"])
+}
 
-    ; --- INTENT SYSTEM MONITOR HOOKS ---
-    WM_SETCURSOR(wParam, lParam, msg, hwnd) {
-        for ctrl in this.clickableCtrls {
-            if (ctrl.Hwnd == wParam && ctrl.Visible) {
-                DllCall("SetCursor", "Ptr", this.hCursorHand)
-                return 1
-            }
-        }
-    }
-
-    WM_MOUSEMOVE(wParam, lParam, msg, hwnd) {
-        isValidControl := false
-        targetCtrlObj := 0
-        for ctrl in this.clickableCtrls {
-            if (ctrl.Hwnd == hwnd) {
-                isValidControl := true
-                targetCtrlObj := ctrl
+ResetHoveredControl(State) {
+    if (State["ActiveHoverCtrl"] != 0) {
+        for ctrl in State["ClickableCtrls"] {
+            if (ctrl.Hwnd == State["ActiveHoverCtrl"]) {
+                AnimateControl(State, ctrl, State["BaseSize"])
                 break
             }
         }
-        
-        if (isValidControl && targetCtrlObj.Visible) {
-            if (this.activeHoverCtrl != hwnd) {
-                this.ResetHoveredCtrl() 
-                this.activeHoverCtrl := hwnd
-                this.AnimateControl(targetCtrlObj, this.hoverSize)
-                SetTimer(() => this.TrackMouseDeparture(), 50) 
-            }
-        }
+        State["ActiveHoverCtrl"] := 0
     }
+}
 
-    TrackMouseDeparture() {
-        if (this.activeHoverCtrl == 0) {
-            SetTimer(() => this.TrackMouseDeparture(), 0)
-            return
-        }
-        
-        MouseGetPos ,,, &currentHwnd, 2
-        if (currentHwnd != this.activeHoverCtrl) {
-            this.ResetHoveredCtrl()
-            SetTimer(() => this.TrackMouseDeparture(), 0)
-        }
+OnImageClick(State, ctrlObj, actionFunc) {
+    AnimateControl(State, ctrlObj, State["ShrinkSize"])
+    actionFunc()
+    SetTimer(() => (
+        State["ActiveHoverCtrl"] == ctrlObj.Hwnd ? AnimateControl(State, ctrlObj, State["HoverSize"]) : AnimateControl(State, ctrlObj, State["BaseSize"])
+    ), -100)
+}
+
+OnToggleClick(State, clickedCtrl, targetCtrl, actionFunc) {
+    AnimateControl(State, clickedCtrl, State["ShrinkSize"])
+    actionFunc()
+    SetTimer(() => ToggleSwap(State, clickedCtrl, targetCtrl), -100)
+}
+
+ToggleSwap(State, clickedCtrl, targetCtrl) {
+    orig := State["OrigCoords"][clickedCtrl.Hwnd]
+    clickedCtrl.Visible := false
+
+    State["CurrentSizes"][clickedCtrl.Hwnd] := State["BaseSize"]
+    State["CurrentSizes"][targetCtrl.Hwnd] := State["BaseSize"]
+
+    clickedCtrl.Move(orig.X, orig.Y, State["BaseSize"], State["BaseSize"])
+    targetCtrl.Move(orig.X, orig.Y, State["BaseSize"], State["BaseSize"])
+    targetCtrl.Visible := true
+
+    DllCall("RedrawWindow", "Ptr", State["Gui"].Hwnd, "Ptr", 0, "Ptr", 0, "UInt", 0x0105)
+
+    State["ActiveHoverCtrl"] := targetCtrl.Hwnd
+    AnimateControl(State, targetCtrl, State["HoverSize"])
+}
+
+; --- HELPERS & ACTIONS ---
+
+ModifySpotifyVolume(amount) {
+    if IsSet(Spotify_UWP) && HasProp(Spotify_UWP, "Volume") {
+        Spotify_UWP.Volume += amount
     }
+}
 
-    ResetHoveredCtrl() {
-        if (this.activeHoverCtrl != 0) {
-            for ctrl in this.clickableCtrls {
-                if (ctrl.Hwnd == this.activeHoverCtrl) {
-                    this.AnimateControl(ctrl, this.baseSize)
-                    break
-                }
-            }
-            this.activeHoverCtrl := 0
-        }
-    }
-
-    WM_ACTIVATE(wParam, lParam, msg, hwnd) {
-        if (wParam == 0 && hwnd == this.hwnd) {
-            this.ResetHoveredCtrl()
-            this.guiObj.Hide()
-            
-            ; --- FIX: Clear state tracking ---
-            this.isGuiVisible := false
-            this.mouseX := 0
-            this.mouseY := 0
-        }
-    }
-
-    OnGuiMouseWheel(wParam, lParam, msg, hwnd) {
-        if (hwnd == this.hwnd || DllCall("GetParent", "Ptr", hwnd) == this.hwnd) {
-            delta := (wParam >> 16) & 0xFFFF
-            if (delta > 0x7FFF) 
-                delta -= 0x10000
-            
-            if (delta > 0) 
-                Spotify_UWP.Volume += (100 / 15)
-            else 
-                Spotify_UWP.Volume -= (100 / 15)
-            return 0
-        }
-    }
-
-    OnTrayMessage(wParam, lParam, msg, hwnd) {
-        if (lParam == 0x200) { ; WM_MOUSEMOVE
-            if (this.isGuiVisible)
-                return
-
-            A_IconTip := ""
-
-            CoordMode("Mouse", "Screen")
-            MouseGetPos(&sX, &sY)
-            this.startX := sX
-            this.startY := sY
-
-            SetTimer(this.hoverTimerObj, 0)
-
-            hoverTime := 400 
-            if !DllCall("SystemParametersInfo", "UInt", 0x0066, "UInt", 0, "Int*", &hoverTime, "UInt", 0)
-                hoverTime := 400
-
-            targetDelay := Max(100, hoverTime - 220)
-
-            SetTimer(this.hoverTimerObj, -targetDelay)
-        }
-    }
-
-    CheckIfStillHovered() {
-        CoordMode("Mouse", "Screen")
-        MouseGetPos(&currentX, &currentY, &targetHwnd)
-        
-        sX := this.startX
-        sY := this.startY
-        this.startX := 0
-        this.startY := 0
-
-        if (Abs(currentX - sX) > 5 || Abs(currentY - sY) > 5)
-            return
-
-        if (!targetHwnd)
-            return
-
-        this.mouseX := currentX
-        this.mouseY := currentY
-
-		if IsFunctionDefined("FrostedTheme") && IsFunctionDefined("ApplyThemeToGui") {
-            %"ApplyThemeToGui"%(this.guiObj, "Dark")
-            %"FrostedTheme"%.Apply(this.guiObj)
-        } else if IsFunctionDefined("ApplyThemeToGui") {
-			%"ApplyThemeToGui"%(this.guiObj)
-		}
-
-        this.guiObj.Show("X" . (this.mouseX - 72) . " Y" . (this.mouseY - 130) . " NoActivate")
-        this.isGuiVisible := true 
-        
-        DllCall("SetWindowPos", "Ptr", this.hwnd, "Ptr", -1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0043)
-        DllCall("dwmapi\DwmSetWindowAttribute", "Ptr", this.hwnd, "UInt", 33, "Int*", 2, "UInt", 4)
-        
-        this.leaveCount := 0 
-        SetTimer(() => this.HideGuiWhenMouseLeaves(), 400)
-
-		IsFunctionDefined(FunctionName) {
-        	try return HasMethod(%FunctionName%)
-        	return false
-    	}
-    }
-
-    HideGuiWhenMouseLeaves() {
-        CoordMode("Mouse", "Screen")
-        MouseGetPos(&mx, &my)
-        this.guiObj.GetPos(&gx, &gy, &gw, &gh)
-        
-        mouseInsideGui := (mx >= gx && mx <= gx + gw && my >= gy && my <= gy + gh)
-        padding := 20 
-        mouseOverIconEstimate := (mx >= this.mouseX - padding && mx <= this.mouseX + padding && my >= this.mouseY - padding && my <= this.mouseY + padding)
-        
-        if (!mouseInsideGui && !mouseOverIconEstimate) {
-            this.leaveCount++ 
-            if (this.leaveCount >= 2) { 
-                this.ResetHoveredCtrl()
-                this.guiObj.Hide()
-                
-                ; --- FIX: Clear state tracking ---
-                this.isGuiVisible := false
-                this.isTimerActive := false
-                this.mouseX := 0
-                this.mouseY := 0
-                
-                SetTimer(() => this.HideGuiWhenMouseLeaves(), 0)
-            }
-        } else {
-            this.leaveCount := 0 
-        }
-    }
+CleanDestroyTC(State) {
+    if HasMethod(IsSet(RemoveGuiFromArray) ? RemoveGuiFromArray : 0)
+        RemoveGuiFromArray(State["Gui"])
+    ResetHoveredControl(State)
+    State["Gui"].Hide()
 }

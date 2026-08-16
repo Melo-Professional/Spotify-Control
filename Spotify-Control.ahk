@@ -5,12 +5,12 @@
  * @author Melo (melo@meloprofessional.com)
  * @date 2026/08/15
  * @releasedate 2026/09/19
- * @version 2.7.2.200
+ * @version 2.7.3.0
  ***********************************************************************/
 
 AppName := "Spotify Control"
 ;@Ahk2Exe-Let U_AppName = %A_PriorLine%
-AppVersion := "2.7.2.200"
+AppVersion := "2.7.3.0"
 ;@Ahk2Exe-Let U_Version = %A_PriorLine%
 AppDescription := "A snippet to control Spotify."
 ;@endregion

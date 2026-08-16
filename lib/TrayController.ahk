@@ -1,3 +1,6 @@
+#Requires AutoHotkey v2.0
+
+; --- INITIALIZATION ---
 InitTrayController()
 
 InitTrayController() {
@@ -69,16 +72,16 @@ InitTrayController() {
 
     ; 5. Instantiate TrayIconHandler
     TrayHandler := TrayIconHandler()
-	TrayHandler.HoverDelay := 400
+    TrayHandler.HoverDelay := 400
     State["TrayHandler"] := TrayHandler
 
-	TrayHandler.OnRightClick	:= (*) => A_TrayMenu.Show()
-	TrayHandler.OnLeftClick		:= (*) => Spotify_UWP.TogglePlay()
-	TrayHandler.OnDoubleClick	:= (*) => Spotify_UWP.ToggleFullscreen()
-    TrayHandler.OnHover			:= (t) => ShowTrayGui(State, t)
-    TrayHandler.OnLeave			:= (t) => OnTrayIconLeave(State, t)
-    TrayHandler.OnWheelUp		:= (*) => ModifySpotifyVolume(100 / 15)
-    TrayHandler.OnWheelDown		:= (*) => ModifySpotifyVolume(-(100 / 15))
+    TrayHandler.OnRightClick    := (*) => A_TrayMenu.Show()
+    TrayHandler.OnLeftClick     := (*) => Spotify_UWP.TogglePlay()
+    TrayHandler.OnDoubleClick   := (*) => Spotify_UWP.ToggleFullscreen()
+    TrayHandler.OnHover         := (t) => ShowTrayGui(State, t)
+    TrayHandler.OnLeave         := (t) => OnTrayIconLeave(State, t)
+    TrayHandler.OnWheelUp       := (*) => ModifySpotifyVolume(100 / 15)
+    TrayHandler.OnWheelDown     := (*) => ModifySpotifyVolume(-(100 / 15))
 
     ; System Event Handlers
     TrayGui.OnEvent("Close", (*) => CleanDestroyTC(State))
@@ -94,14 +97,16 @@ InitTrayController() {
 ; --- SHOW / HIDE LOGIC ---
 
 ShowTrayGui(State, trayObj) {
-    if WinExist(State["Gui"].Hwnd) && DllCall("IsWindowVisible", "Ptr", State["Gui"].Hwnd)
+    TrayGui := State["Gui"]
+
+    if WinExist(TrayGui.Hwnd) && DllCall("IsWindowVisible", "Ptr", TrayGui.Hwnd)
         return
 
     if IsFunctionDefined("FrostedTheme") && IsFunctionDefined("ApplyThemeToGui") {
-        %"ApplyThemeToGui"%(State["Gui"], "Dark")
-        %"FrostedTheme"%.Apply(State["Gui"])
+        %"ApplyThemeToGui"%(TrayGui, "Dark")
+        %"FrostedTheme"%.Apply(TrayGui)
     } else if IsFunctionDefined("ApplyThemeToGui") {
-        %"ApplyThemeToGui"%(State["Gui"])
+        %"ApplyThemeToGui"%(TrayGui)
     }
 
     ; Re-bind GUI and reset internal Tracker state prior to display
@@ -110,12 +115,80 @@ ShowTrayGui(State, trayObj) {
     Tracker.hoveredCtrlHwnd := 0
     Tracker.isMouseOverGui := false
     Tracker.leaveStartTime := 0
-    Tracker.AddGui := State["Gui"]
+    Tracker.AddGui := TrayGui
 
-    State["Gui"].Show("X" . (trayObj.TrayMouseX - 72) . " Y" . (trayObj.TrayMouseY - 130) . " NoActivate")
+    ; Force layout calculation to acquire accurate GUI dimensions
+    TrayGui.Show("Hide")
+    TrayGui.GetPos(,, &guiWidth, &guiHeight)
+    if (!guiWidth) {
+        guiWidth := 150
+        guiHeight := 100
+    }
 
-    DllCall("SetWindowPos", "Ptr", State["Gui"].Hwnd, "Ptr", -1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0043)
-    DllCall("dwmapi\DwmSetWindowAttribute", "Ptr", State["Gui"].Hwnd, "UInt", 33, "Int*", 2, "UInt", 4)
+    ; Fetch raw coordinates of the Tray Icon
+    tbInfo := trayObj.GetTaskbarPosition()
+    iconX := tbInfo.X
+    iconY := tbInfo.Y
+
+    ; Determine target monitor geometrically based on icon location
+    monIndex := 1
+    loop MonitorGetCount() {
+        MonitorGet(A_Index, &L, &T, &R, &B)
+        if (iconX >= L && iconX <= R && iconY >= T && iconY <= B) {
+            monIndex := A_Index
+            break
+        }
+    }
+
+    MonitorGet(monIndex, &mL, &mT, &mR, &mB)
+    offsetGap := DPIScale(1)
+
+    ; Get physical taskbar dimensions (works even in auto-hide mode)
+    tbHwnd := WinExist("ahk_class Shell_TrayWnd")
+    if tbHwnd {
+        WinGetPos(&tbX, &tbY, &tbW, &tbH, tbHwnd)
+    } else {
+        tbX := mL, tbY := mB - 48, tbW := mR - mL, tbH := 48 ; Fallback
+    }
+
+    ; Determine true orientation by comparing icon proximity to physical monitor edges
+    distTop    := Abs(iconY - mT)
+    distBottom := Abs(iconY - mB)
+    distLeft   := Abs(iconX - mL)
+    distRight  := Abs(iconX - mR)
+
+    minDist := Min(distTop, distBottom, distLeft, distRight)
+
+    if (minDist == distTop) {
+        ; Taskbar at Top -> Spawn below taskbar edge
+        spawnX := iconX - (guiWidth / 2)
+        spawnY := (tbY + tbH) + offsetGap
+    } else if (minDist == distBottom) {
+        ; Taskbar at Bottom -> Spawn above taskbar edge
+        spawnX := iconX - (guiWidth / 2)
+        spawnY := tbY - guiHeight - offsetGap
+    } else if (minDist == distLeft) {
+        ; Taskbar on Left -> Spawn right of taskbar edge
+        spawnX := (tbX + tbW) + offsetGap
+        spawnY := iconY - (guiHeight / 2)
+    } else {
+        ; Taskbar on Right -> Spawn left of taskbar edge
+        spawnX := tbX - guiWidth - offsetGap
+        spawnY := iconY - (guiHeight / 2)
+    }
+
+    ; Safeguard: Clamp GUI within the target monitor's bounds
+    spawnX := Clamp(spawnX, mL + 8, mR - guiWidth - 8)
+    spawnY := Clamp(spawnY, mT + 8, mB - guiHeight - 8)
+
+    TrayGui.Show("X" . Round(spawnX) . " Y" . Round(spawnY) . " NoActivate")
+
+    DllCall("SetWindowPos", "Ptr", TrayGui.Hwnd, "Ptr", -1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0043)
+    DllCall("dwmapi\DwmSetWindowAttribute", "Ptr", TrayGui.Hwnd, "UInt", 33, "Int*", 2, "UInt", 4)
+}
+
+Clamp(val, minVal, maxVal) {
+    return Max(minVal, Min(val, maxVal))
 }
 
 OnTrayIconLeave(State, trayObj) {

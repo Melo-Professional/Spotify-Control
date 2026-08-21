@@ -1,19 +1,14 @@
 /************************************************************************
  * @description Vars_Custom
  * @author Melo (melo@meloprofessional.com)
- * @date 2026/06/08
- * @version 1.0.0
+ * @date 2026/06/21
+ * @version 1.4.0
  ***********************************************************************/
 
 ;@region VARS
 ; CUSTOM VARIABLES
-App.Github := "https://github.com/Melo-Professional/Spotify-Control"
-if (App.HasOwnProp("Github")  && App.Github != "" && App.Github != "https://github.com/Melo-Professional/") {
-	App.UpdateAuto := true
-	App.UpdateFrequencyDays := 3
-	App.UpdateLastCheck := ""
-	SaveToINI.Push("App.UpdateAuto", "App.UpdateFrequencyDays", "App.UpdateLastCheck")
-}
+App.GitHubRepo := "https://github.com/Melo-Professional/Spotify-Control"
+;App.NameCutted			:= "Template`nBigName"
 
 General := {
     CurrentLang : "",
@@ -108,14 +103,20 @@ OSDCP.ProgressBgDark   := "29330a"
 
 
 ;@region INI
+SaveToINI := []
 SaveToINI.Push("OSDSettings.UseOSD", "General.CurrentLang", "Settings.UseOSD", "General.CurrentPlayerExe",
 				"General.CurrentPlayerName", "General.HK_ToggleFullscreen", "General.HK_ShowHelpGUI",
 				"General.HK_AddToList", "General.HK_OSD_CP", "General.HK_PreviousSong",
 				"General.HK_NextSong", "General.HK_TogglePlay", "General.HK_ToggleMute",
 				"General.HK_VolumeDown", "General.HK_VolumeUp"
 				)
-RegisterArrayItems(SaveToINI)
-LoadINI()
+
+if App.HasOwnProp("GitHubRepo")
+	SaveToINI.Push("App.UpdateAuto", "App.UpdateFrequencyDays", "App.UpdateLastCheck")
+if (IsSet(INIManager) && (SaveToINI != [])) {
+	IsSet(RegisterArrayItems) ? RegisterArrayItems(SaveToINI) : 0
+	IsSet(LoadINI) ? LoadINI() : 0
+}
 ;@endregion
 
 GetSystemLangCode() {

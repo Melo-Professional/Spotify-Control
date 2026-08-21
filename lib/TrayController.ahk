@@ -52,8 +52,8 @@ InitTrayController() {
     Tracker.SetAutoDismiss("Hide", 300)
 
     Tracker.RegisterGui(Map(
-        "OnWheelUp",   (*) => ModifySpotifyVolume(100 / 15),
-        "OnWheelDown", (*) => ModifySpotifyVolume(-(100 / 15)),
+        "OnWheelUp",   (*) => VolumeUp(),
+        "OnWheelDown", (*) => VolumeDown(),
         "OnLeave",     (*) => ResetHoveredControl(State)
     ))
 
@@ -80,8 +80,8 @@ InitTrayController() {
     TrayHandler.OnDoubleClick   := (*) => Spotify_UWP.ToggleFullscreen()
     TrayHandler.OnHover         := (t) => ShowTrayGui(State, t)
     TrayHandler.OnLeave         := (t) => OnTrayIconLeave(State, t)
-    TrayHandler.OnWheelUp       := (*) => ModifySpotifyVolume(100 / 15)
-    TrayHandler.OnWheelDown     := (*) => ModifySpotifyVolume(-(100 / 15))
+    TrayHandler.OnWheelUp       := (*) => VolumeUp()
+    TrayHandler.OnWheelDown     := (*) => VolumeDown()
 
     ; System Event Handlers
     TrayGui.OnEvent("Close", (*) => CleanDestroyTC(State))
@@ -224,8 +224,8 @@ RegisterControlEvents(Tracker, State, ctrlObj, actionFunc) {
         "OnEnter",     (c) => SetControlHovered(State, c),
         "OnLeave",     (c) => SetControlUnhovered(State, c),
         "OnLClick",    (c) => OnImageClick(State, c, actionFunc),
-        "OnWheelUp",   (*) => ModifySpotifyVolume(100 / 15),
-        "OnWheelDown", (*) => ModifySpotifyVolume(-(100 / 15))
+        "OnWheelUp",   (*) => VolumeUp(),
+        "OnWheelDown", (*) => VolumeDown()
     ))
 }
 
@@ -234,8 +234,8 @@ RegisterToggleEvents(Tracker, State, clickedCtrl, targetCtrl, actionFunc) {
         "OnEnter",     (c) => SetControlHovered(State, c),
         "OnLeave",     (c) => SetControlUnhovered(State, c),
         "OnLClick",    (c) => OnToggleClick(State, clickedCtrl, targetCtrl, actionFunc),
-        "OnWheelUp",   (*) => ModifySpotifyVolume(100 / 15),
-        "OnWheelDown", (*) => ModifySpotifyVolume(-(100 / 15))
+        "OnWheelUp",   (*) => VolumeUp(),
+        "OnWheelDown", (*) => VolumeDown()
     ))
 }
 
@@ -327,14 +327,6 @@ ToggleSwap(State, clickedCtrl, targetCtrl) {
 
     State["ActiveHoverCtrl"] := targetCtrl.Hwnd
     AnimateControl(State, targetCtrl, State["HoverSize"])
-}
-
-; --- HELPERS & ACTIONS ---
-
-ModifySpotifyVolume(amount) {
-    if IsSet(Spotify_UWP) && HasProp(Spotify_UWP, "Volume") {
-        Spotify_UWP.Volume += amount
-    }
 }
 
 CleanDestroyTC(State) {

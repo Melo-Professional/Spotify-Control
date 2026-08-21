@@ -53,19 +53,13 @@ ShowMainGUI() {
 	Rows_Gap := 26
 
 	; 1. Header Section
-	try {
-		;MyGui.Add("Picture", "w48 h-1 xm ym", App.Icon)
-		MyGui.Add("Picture", "w32 h-1 xm ym+8", App.Icon)
-	} catch {
-		MyGui.SetFont("s16 w100", Settings.GuiFontName)
-		MyGui.Add("Text", "w32 h32 xm ym", "[i]")
-	}
+	MyGui.Add("Picture", "w32 h-1 x" GuiWidth - MyGui.MarginX - 32 " ym+8", App.Icon)
 
     MyGui.SetFont("s16 w800", Settings.GuiFontName)
-    MyGui.Add("Text", "x+25 y" (MyGui.MarginY + 8), "Edit Hotkeys")
+    MyGui.Add("Text", "xm5 y" (MyGui.MarginY + 8), "Edit Hotkeys")
 
     ; Divider Line
-    MyGui.Add("Text", "xm y+32 w" ContentWidth " h1 Background333333")
+    MyGui.Add("Text", "xm y+24 w" ContentWidth " h1 Background333333")
 
     ; --- 2. Four-Column Layout ---
      ; Row 0
@@ -134,17 +128,17 @@ ShowMainGUI() {
 	HotkeyManager.BindControl(btnHK_ShowHelpGUI, General.HK_ShowHelpGUI, ShowGUI)
 
 
-    MyGui.SetFont("s14 w800", Settings.GuiFontName)
+    MyGui.SetFont("s16 w800", Settings.GuiFontName)
     MyGui.Add("Text", "xm y+60", "Tray Icon Actions")
 
     ; Divider Line
-    MyGui.Add("Text", "xm y+32 w" ContentWidth " h1 Background333333")
+    MyGui.Add("Text", "xm y+24 w" ContentWidth " h1 Background333333")
 
-    MyGui.SetFont("w100 s9 Italic")
-    MyGui.Add("Text", "xm y+20 vSmooth_12", "Left click = Play/ Pause")
-    MyGui.Add("Text", "xm y+10 vSmooth_13", "Double click = Full Screen")
-    MyGui.Add("Text", "xm y+10 vSmooth_14", "Mouse Wheel click = Volume Up/ Down")
-    MyGui.Add("Text", "xm y+10 vSmooth_15", "Right click = Show Menu")
+    MyGui.SetFont("w100 s11 Italic")
+    MyGui.Add("Text", "x" Col1_X " y+20 vSmooth_12", "Left click = Play/ Pause")
+    MyGui.Add("Text", "x" Col3_X " yp vSmooth_13", "Double click = Full Screen")
+    MyGui.Add("Text", "x" Col1_X " y+10 vSmooth_14", "Mouse Wheel click = Volume Up/ Down")
+    MyGui.Add("Text", "x" Col3_X " yp vSmooth_15", "Right click = Show Menu")
 
 
     if UseAcrylicGUI {
@@ -169,9 +163,9 @@ ShowMainGUI() {
     }
 
 
-	HelpTracker := GuiTracker()
-	HelpTracker.AddGui := MyGui
-	HelpTracker.SetAutoDismiss("Destroy", 1000)
+	Tracker := GuiTracker()
+	Tracker.AddGui := MyGui
+	Tracker.SetAutoDismiss("Destroy", 1000)
 
     MyGui.Show("w" GuiWidth)
     WinActivate("ahk_id " MyGui.Hwnd)
@@ -187,6 +181,25 @@ ShowMainGUI() {
 			}
 		}
     }
+
+	; --- TRACKER REGISTRATION HELPERS ---
+	RegisterControlEvents( btnAddToList)
+	RegisterControlEvents( btnToggleMute)
+	RegisterControlEvents( btnOSD_CP)
+	RegisterControlEvents( btnHK_VolumeDown)
+	RegisterControlEvents( btnHK_PreviousSong)
+	RegisterControlEvents( btnHK_VolumeUp)
+	RegisterControlEvents( btnHK_NextSong)
+	RegisterControlEvents( btnHK_ToggleFullscreen)
+	RegisterControlEvents( btnHK_TogglePlay)
+	RegisterControlEvents( btnHK_ShowHelpGUI)
+
+	RegisterControlEvents(ctrlObj) {
+		Tracker.RegisterControl(ctrlObj, Map(
+			"OnEnter", (ctrlObj) => (ctrlObj.SetFont("c" TextHoverColor), ctrlObj.Opt("+Background" BGroundHoverColor)),
+			"OnLeave", (ctrlObj) => (ctrlObj.SetFont("c" TextNormalColor), ctrlObj.Opt("+Background" BGroundNormalColor))
+		))
+	}
 
     ; --- Auto-Dismiss Event Triggers ---
     MyGui.OnEvent("Close", CleanDestroy)

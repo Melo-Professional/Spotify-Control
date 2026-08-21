@@ -3,14 +3,14 @@
 /************************************************************************
  * @description A snippet to control Spotify.
  * @author Melo (melo@meloprofessional.com)
- * @date 2026/08/15
+ * @date 2026/08/21
  * @releasedate 2026/09/19
- * @version 2.7.3.0
+ * @version 2.7.4.0
  ***********************************************************************/
 
 AppName := "Spotify Control"
 ;@Ahk2Exe-Let U_AppName = %A_PriorLine%
-AppVersion := "2.7.3.0"
+AppVersion := "2.7.4.0"
 ;@Ahk2Exe-Let U_Version = %A_PriorLine%
 AppDescription := "A snippet to control Spotify."
 ;@endregion
@@ -38,9 +38,9 @@ A_HotkeyInterval := 1000
 ;@region Includes
 #Include *i <_CompilerDirectives>
 #Include *i <_Backup>
-#Include *i <_HelperFuncs>
-#Include *i <_Config&Vars>
 #Include *i <_SaveSettings>
+#Include *i <_Config&Vars>
+#Include *i <_HelperFuncs>
 ;#Include *i <_MessageManager>
 #Include *i <_TrayIconHandler>
 #Include *i <_Theme>
@@ -60,23 +60,26 @@ A_HotkeyInterval := 1000
 
 #Include <Translations>
 #Include <Vars_Custom>
-;#Include <About>
 #Include <UIA>
 #Include <Spotify_UWP>
 #Include <Menu_Custom>
 #Include <Help>
 #Include <TrayController>
-
 ;@endregion
 
+
 ;@region Startup
-; SPLASHSCREEN
-if !A_Args.Length && IsSet(SplashScreen) {
-    SplashScreen()
+if !A_Args.Length {
+	if IsSet(SplashScreen) {
+	    SplashScreen()
+	} else if isSet(SplashScreenOSD) {
+		SplashScreenOSD()
+	}
 }
-IsFunctionDefined("StartMenu")			? %"StartMenu"%()			: ""
-IsFunctionDefined("Menu_Custom")		? %"Menu_Custom"%()			: ""
-IsFunctionDefined("StartAutoUpdater")	? %"StartAutoUpdater"%()	: ""
+
+IsSet(StartMenu) ? StartMenu() : 0
+IsSet(Menu_Custom) ? Menu_Custom() : 0
+IsSet(StartAutoUpdater) ? StartAutoUpdater() : 0
 ;@endregion
 ;@endregion
 
@@ -322,6 +325,6 @@ GetPlayPercentage(timeStr, lengthStr) {
 ;@endregion
 
 ;@region Reload
-CheckReloadArgs()
+IsSet(CheckReloadArgs) ? CheckReloadArgs() : 0
 ;@endregion
 ;@endregion
